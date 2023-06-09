@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "pragma": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "namespace": {
+      "type": "string"
+    },
+    "trait": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "template": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pack": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "type",
+                "name"
+              ]
+            }
+          },
+          "func": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "ret": {
+                  "type": "string"
+                },
+                "args": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "wrap": {
+                        "type": "string"
+                      },
+                      "cvref": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "type"
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "ret",
+                "args"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "func"
+        ]
+      }
+    }
+  },
+  "required": [
+    "namespace",
+    "trait"
+  ]
+}
