@@ -4,11 +4,11 @@ import sys
 
 
 class CppTmpl:
-    vtable = """{ret} (*{name})({plist}){noexcept};"""
+    vtable = """{ret} (*{iname})({plist}){noexcept};"""
 
-    vtable_impl = """static {ret} {name}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
+    vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
 
-    vtable_for = """vtable_impl<Impl>::{name},"""
+    vtable_for = """vtable_impl<Impl>::{iname},"""
 
     trait_base = """{decl} {{
 struct vtable {{
@@ -29,7 +29,7 @@ template <typename Impl>
 constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
 }};"""
 
-    trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{name}({clist}); }}"""
+    trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
 
     trait_ref = """{decl} : {base} {{
 using base = {base};
@@ -328,23 +328,27 @@ class Trait:
         prepend = {"name": "impl.get()" if shared_ptr else "impl", "type": "void *"}
         return [prepend] + args
 
+    @staticmethod
+    def iname_for(f: dict) -> str:
+        return f['name'] if f['name'] != "operator()" else "invoke"
+
     def vtable(self, f: dict) -> str:
         """Generates a vtable entry"""
         noexcept = "noexcept" if "noexcept" in f.get('cvref', "") else ""
         plist = self.id.fparam_list(self.add_impl_ptr(f['args']))
-        return CppTmpl.vtable.format(ret=f['ret'], name=f['name'], plist=plist, noexcept=noexcept)
+        return CppTmpl.vtable.format(ret=f['ret'], iname=self.iname_for(f), plist=plist, noexcept=noexcept)
 
     def vtable_impl(self, f: dict) -> str:
         """Generates a vtable impl entry"""
         noexcept = "noexcept" if "noexcept" in f.get('cvref', "") else ""
         plist = self.id.fparam_list_named(self.add_impl_ptr(f['args']))
         clist = self.id.fcall_list(f['args'])
-        return CppTmpl.vtable_impl.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist, noexcept=noexcept)
+        return CppTmpl.vtable_impl.format(ret=f['ret'], iname=self.iname_for(f), name=f['name'], plist=plist, clist=clist, noexcept=noexcept)
 
     @staticmethod
     def vtable_for(f: dict) -> str:
         """Generate a vtable_for<Impl> entry"""
-        return CppTmpl.vtable_for.format(name=f['name'])
+        return CppTmpl.vtable_for.format(iname=Trait.iname_for(f))
 
     def trait_base(self):
         """Generate trait base"""
@@ -364,7 +368,7 @@ class Trait:
         plist = self.id.fparam_list_named(f['args'])
         clist = self.id.fcall_list(self.add_impl_ptr(f['args'], shared))
         cvref = f.get('cvref', "")
-        return CppTmpl.trait_api.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist, cvref=cvref)
+        return CppTmpl.trait_api.format(ret=f['ret'], name=f['name'], iname=self.iname_for(f), plist=plist, clist=clist, cvref=cvref)
 
     def trait_ref(self):
         """Generates a trait ref definition"""
