@@ -170,8 +170,16 @@ class IdentGenerator:
         self.has_t = len(self.tmap) > 0
         self.has_nt = len(self.ntmap) > 0
 
+    def is_tmpl_t(self, arg: Arg) -> bool:
+        """Check if an arg is type template"""
+        return self.has_t and arg['type'] in self.tmap
+
+    def is_tmpl_nt(self, arg: Arg) -> bool:
+        """Check if an arg is non-type template"""
+        return self.has_nt and arg['type'] in self.ntmap
+
     def is_pack(self, arg: Arg) -> bool:
-        """Check if an arg is templated"""
+        """Check if an arg is pack"""
         if not self.has_tmpl:
             return False
         # check type param
@@ -226,6 +234,11 @@ class IdentGenerator:
         """Generate function call arg list"""
         if len(args) == 0:
             return ""
+        # NOTE: we should always forward template args unless user wraps explicitly
+        for arg in args:
+            if "warp" not in arg and self.is_tmpl_t(arg):
+                # we don't need to forward const& but whatever, no harm
+                arg['wrap'] = "std::forward<{type}>".format(type=arg['type'])
         return ", ".join([self.trans_fcall(arg) for arg in args])
 
     @staticmethod
