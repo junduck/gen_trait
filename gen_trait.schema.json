@@ -80,6 +80,9 @@
                       "type"
                     ]
                   }
+                },
+                "cvref": {
+                  "type": "string"
                 }
               },
               "required": [
