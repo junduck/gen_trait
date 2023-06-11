@@ -1,5 +1,5 @@
-#ifndef INCLUDE_e78e5f1a0375148daf36b0219ca0069de9d5e551
-#define INCLUDE_e78e5f1a0375148daf36b0219ca0069de9d5e551
+#ifndef INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0
+#define INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0
 
 #include <memory>
 #include <tuple>
@@ -25,6 +25,9 @@ template <size_t I, typename... Args> struct pack_and_get_base {
       vtable_impl<Impl>::get,
       vtable_impl<Impl>::destroy,
   };
+  template <typename Impl>
+  constexpr static bool not_relative =
+      !std::is_base_of_v<pack_and_get_base, std::decay_t<Impl>>;
 };
 struct sendable_base {
   struct vtable {
@@ -42,6 +45,9 @@ struct sendable_base {
       vtable_impl<Impl>::send,
       vtable_impl<Impl>::destroy,
   };
+  template <typename Impl>
+  constexpr static bool not_relative =
+      !std::is_base_of_v<sendable_base, std::decay_t<Impl>>;
 };
 } // namespace detail
 template <size_t I, typename... Args>
@@ -66,6 +72,11 @@ public:
   template <typename Impl>
   explicit pack_and_get_ref(std::shared_ptr<Impl> impl) noexcept
       : pack_and_get_ref(impl.get(), &base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  pack_and_get_ref(Impl const &impl) noexcept
+      : pack_and_get_ref(std::addressof(const_cast<Impl &>(impl)),
+                         &base::template vtable_for<Impl>) {}
   void swap(pack_and_get_ref &other) noexcept {
     std::swap(impl, other.impl);
     std::swap(vtbl, other.vtbl);
@@ -105,6 +116,11 @@ public:
   template <typename Impl>
   explicit sendable_ref(std::shared_ptr<Impl> impl) noexcept
       : sendable_ref(impl.get(), &base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  sendable_ref(Impl const &impl) noexcept
+      : sendable_ref(std::addressof(const_cast<Impl &>(impl)),
+                     &base::template vtable_for<Impl>) {}
   void swap(sendable_ref &other) noexcept {
     std::swap(impl, other.impl);
     std::swap(vtbl, other.vtbl);
@@ -145,6 +161,11 @@ public:
   template <typename Impl>
   explicit pack_and_get(std::unique_ptr<Impl> impl) noexcept
       : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  pack_and_get(Impl &&impl)
+      : impl(new Impl(std::forward<Impl>(impl))),
+        vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~pack_and_get() {
     vtbl->destroy(impl);
     impl = nullptr;
@@ -190,6 +211,11 @@ public:
   template <typename Impl>
   explicit sendable(std::unique_ptr<Impl> impl) noexcept
       : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  sendable(Impl &&impl)
+      : impl(new Impl(std::forward<Impl>(impl))),
+        vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~sendable() {
     vtbl->destroy(impl);
     impl = nullptr;
@@ -220,6 +246,12 @@ public:
   template <typename Impl>
   explicit pack_and_get_shared(std::shared_ptr<Impl> impl) noexcept
       : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  pack_and_get_shared(Impl &&impl)
+      : impl(std::make_shared<std::remove_reference_t<Impl>>(
+            std::forward<Impl>(impl))),
+        vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   operator pack_and_get_ref<I, Args...>() const { return {impl.get(), vtbl}; }
   void swap(pack_and_get_shared &other) noexcept {
     impl.swap(other.impl);
@@ -252,6 +284,12 @@ public:
   template <typename Impl>
   explicit sendable_shared(std::shared_ptr<Impl> impl) noexcept
       : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
+  template <typename Impl,
+            typename = std::enable_if_t<base::template not_relative<Impl>>>
+  sendable_shared(Impl &&impl)
+      : impl(std::make_shared<std::remove_reference_t<Impl>>(
+            std::forward<Impl>(impl))),
+        vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   operator sendable_ref() const { return {impl.get(), vtbl}; }
   void swap(sendable_shared &other) noexcept {
     impl.swap(other.impl);
@@ -311,4 +349,4 @@ template <> struct hash<jduck::gen_trait::sample::sendable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_e78e5f1a0375148daf36b0219ca0069de9d5e551
+#endif // INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0

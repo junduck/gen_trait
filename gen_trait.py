@@ -25,6 +25,8 @@ constexpr static vtable vtable_for{{
 {vtable_for_list}
 vtable_impl<Impl>::destroy,
 }};
+template <typename Impl>
+constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
 }};"""
 
     trait_api = """{ret} {name}({plist}) const {{ return vtbl->{name}({clist}); }}"""
@@ -45,6 +47,8 @@ template <typename Impl>
 explicit {name}(std::unique_ptr<Impl> impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
 template <typename Impl>
 explicit {name}(std::shared_ptr<Impl> impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
+template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
+{name}(Impl const &impl) noexcept : {name}(std::addressof(const_cast<Impl&>(impl)), &base::template vtable_for<Impl>) {{}}
 void swap({name} &other) noexcept {{
 std::swap(impl, other.impl);
 std::swap(vtbl, other.vtbl);
@@ -75,6 +79,8 @@ template <typename Impl>
 explicit {name}(Impl *impl) noexcept : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
 template <typename Impl>
 explicit {name}(std::unique_ptr<Impl> impl) noexcept : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {{}}
+template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
+{name}(Impl &&impl) : impl(new Impl(std::forward<Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
 ~{name}() {{ vtbl->destroy(impl); impl = nullptr; }}
 operator {trait_ref}() const {{ return {{impl, vtbl}}; }}
 void swap({name} &other) noexcept {{
@@ -98,6 +104,9 @@ template <typename Impl>
 explicit {name}(Impl *impl) : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
 template <typename Impl>
 explicit {name}(std::shared_ptr<Impl> impl) noexcept : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
+template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
+{name}(Impl &&impl) :
+impl(std::make_shared<std::remove_reference_t<Impl>>(std::forward<Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
 operator {trait_ref}() const {{ return {{impl.get(), vtbl}}; }}
 void swap({name} &other) noexcept {{
 impl.swap(other.impl);
@@ -344,6 +353,7 @@ class Trait:
         vtable_impl_list = "\n".join([self.vtable_impl(f) for f in self.func])
         vtable_for_list = "\n".join([self.vtable_for(f) for f in self.func])
         return CppTmpl.trait_base.format(decl=decl,
+                                         name=base_name,
                                          vtable_list=vtable_list,
                                          vtable_impl_list=vtable_impl_list,
                                          vtable_for_list=vtable_for_list)
