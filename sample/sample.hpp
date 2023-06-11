@@ -1,5 +1,5 @@
-#ifndef INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0
-#define INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0
+#ifndef INCLUDE_ead89cfa4467da2c883e8ea0ab1a743a0e2afd8f
+#define INCLUDE_ead89cfa4467da2c883e8ea0ab1a743a0e2afd8f
 
 #include <memory>
 #include <tuple>
@@ -9,14 +9,16 @@ namespace detail {
 template <size_t I, typename... Args> struct pack_and_get_base {
   struct vtable {
     std::tuple<Args...> (*pack)(void *, Args...);
-    int (*get)(void *);
+    int (*get)(void *) noexcept;
     void (*destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
     static std::tuple<Args...> pack(void *impl, Args... args) {
       return static_cast<Impl *>(impl)->pack(std::move(args)...);
     }
-    static int get(void *impl) { return static_cast<Impl *>(impl)->get(); }
+    static int get(void *impl) noexcept {
+      return static_cast<Impl *>(impl)->get();
+    }
     static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
   };
   template <typename Impl>
@@ -90,10 +92,10 @@ public:
   }
   explicit operator bool() const noexcept { return impl != nullptr; }
 
-  std::tuple<Args...> pack(Args... args) const {
+  std::tuple<Args...> pack(Args... args) {
     return vtbl->pack(impl, std::move(args)...);
   }
-  int get() const { return vtbl->get(impl); }
+  int get() const noexcept { return vtbl->get(impl); }
 };
 class sendable_ref : detail::sendable_base {
   using base = detail::sendable_base;
@@ -134,7 +136,7 @@ public:
   }
   explicit operator bool() const noexcept { return impl != nullptr; }
 
-  void send(int const &x) const { return vtbl->send(impl, x); }
+  void send(int const &x) { return vtbl->send(impl, x); }
 };
 template <size_t I, typename... Args>
 class pack_and_get : detail::pack_and_get_base<I, Args...> {
@@ -183,10 +185,10 @@ public:
     return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
   }
 
-  std::tuple<Args...> pack(Args... args) const {
+  std::tuple<Args...> pack(Args... args) {
     return vtbl->pack(impl, std::move(args)...);
   }
-  int get() const { return vtbl->get(impl); }
+  int get() const noexcept { return vtbl->get(impl); }
 };
 class sendable : detail::sendable_base {
   using base = detail::sendable_base;
@@ -230,7 +232,7 @@ public:
     return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
   }
 
-  void send(int const &x) const { return vtbl->send(impl, x); }
+  void send(int const &x) { return vtbl->send(impl, x); }
 };
 template <size_t I, typename... Args>
 class pack_and_get_shared : detail::pack_and_get_base<I, Args...> {
@@ -266,10 +268,10 @@ public:
     return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
   }
 
-  std::tuple<Args...> pack(Args... args) const {
+  std::tuple<Args...> pack(Args... args) {
     return vtbl->pack(impl.get(), std::move(args)...);
   }
-  int get() const { return vtbl->get(impl.get()); }
+  int get() const noexcept { return vtbl->get(impl.get()); }
 };
 class sendable_shared : detail::sendable_base {
   using base = detail::sendable_base;
@@ -303,7 +305,7 @@ public:
     return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
   }
 
-  void send(int const &x) const { return vtbl->send(impl.get(), x); }
+  void send(int const &x) { return vtbl->send(impl.get(), x); }
 };
 } // namespace jduck::gen_trait::sample
 
@@ -349,4 +351,4 @@ template <> struct hash<jduck::gen_trait::sample::sendable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_134cd28dd7c8b2f6e14f2e0803da71897ed96dc0
+#endif // INCLUDE_ead89cfa4467da2c883e8ea0ab1a743a0e2afd8f

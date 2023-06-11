@@ -30,7 +30,8 @@
         {
           "name": "get",
           "ret": "int",
-          "args": []
+          "args": [],
+          "cvref": "const noexcept"
         }
       ]
     },

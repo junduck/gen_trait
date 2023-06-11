@@ -4,9 +4,9 @@ import sys
 
 
 class CppTmpl:
-    vtable = """{ret} (*{name})({plist});"""
+    vtable = """{ret} (*{name})({plist}){noexcept};"""
 
-    vtable_impl = """static {ret} {name}({plist}) {{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
+    vtable_impl = """static {ret} {name}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
 
     vtable_for = """vtable_impl<Impl>::{name},"""
 
@@ -29,7 +29,7 @@ template <typename Impl>
 constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
 }};"""
 
-    trait_api = """{ret} {name}({plist}) const {{ return vtbl->{name}({clist}); }}"""
+    trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{name}({clist}); }}"""
 
     trait_ref = """{decl} : {base} {{
 using base = {base};
@@ -177,11 +177,11 @@ class IdentGenerator:
         # check type param
         if self.has_t and arg['type'] in self.tmap:
             elem = self.tmap[arg['type']]
-            return elem['pack'] if "pack" in elem else False
+            return elem.get('pack', False)
         # check non-type param
         if self.has_nt and arg['name'] in self.ntmap:
             elem = self.ntmap[arg['name']]
-            return elem['pack'] if "pack" in elem else False
+            return elem.get('pack', False)
 
     def trans_fparam(self, arg: Arg) -> str:
         """Transform an arg to function param"""
@@ -230,8 +230,7 @@ class IdentGenerator:
 
     @staticmethod
     def expand_tpack(item: dict) -> str:
-        is_pack = item['pack'] if "pack" in item else False
-        return "..." if is_pack else ""
+        return "..." if item.get('pack', False) else ""
 
     def tparam_list(self):
         """Generate template param list"""
@@ -331,14 +330,16 @@ class Trait:
 
     def vtable(self, f: dict) -> str:
         """Generates a vtable entry"""
+        noexcept = "noexcept" if "noexcept" in f.get('cvref', "") else ""
         plist = self.id.fparam_list(self.add_impl_ptr(f['args']))
-        return CppTmpl.vtable.format(ret=f['ret'], name=f['name'], plist=plist)
+        return CppTmpl.vtable.format(ret=f['ret'], name=f['name'], plist=plist, noexcept=noexcept)
 
     def vtable_impl(self, f: dict) -> str:
         """Generates a vtable impl entry"""
+        noexcept = "noexcept" if "noexcept" in f.get('cvref', "") else ""
         plist = self.id.fparam_list_named(self.add_impl_ptr(f['args']))
         clist = self.id.fcall_list(f['args'])
-        return CppTmpl.vtable_impl.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist)
+        return CppTmpl.vtable_impl.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist, noexcept=noexcept)
 
     @staticmethod
     def vtable_for(f: dict) -> str:
@@ -362,7 +363,8 @@ class Trait:
         """Generates a trait api entry"""
         plist = self.id.fparam_list_named(f['args'])
         clist = self.id.fcall_list(self.add_impl_ptr(f['args'], shared))
-        return CppTmpl.trait_api.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist)
+        cvref = f.get('cvref', "")
+        return CppTmpl.trait_api.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist, cvref=cvref)
 
     def trait_ref(self):
         """Generates a trait ref definition"""
@@ -449,7 +451,7 @@ class GenTrait:
             self.ns = ""
             self.ns_begin = ""
             self.ns_end = ""
-        self.trait = [Trait(t['name'], t['template'] if "template" in t else [], t['func'], self.ns) for t in trait]
+        self.trait = [Trait(t['name'], t.get('template', []), t['func'], self.ns) for t in trait]
 
     def __str__(self):
         trait_base_list = "\n".join([t.trait_base() for t in self.trait])
@@ -479,8 +481,8 @@ def main(filename):
     """Called directly from console, prints generated traits"""
     with open(filename, "r") as f:
         j = json.load(f)
-    pragma = j['pragma'] if "pragma" in j else []
-    include = j['include'] if "include" in j else []
+    pragma = j.get('pragma', [])
+    include = j.get('include', [])
     gen = GenTrait(j['trait'], j['namespace'], pragma, include)
     print(gen)
 
