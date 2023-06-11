@@ -1,0 +1,22 @@
+{
+  "include": [],
+  "namespace": "jduck::gen_trait::sample",
+  "trait": [
+    {
+      "comment": "For demo purpose only, you should use std::function or equivalent because of SBO and other optimizations",
+      "name": "callable",
+      "template": [
+        { "type": "typename", "name": "R" },
+        { "type": "typename", "name": "Args", "pack": true }
+      ],
+      "func": [
+        {
+          "name": "operator()",
+          "ret": "R",
+          "args": [{ "name": "args", "type": "Args"}],
+          "cvref": "const"
+        }
+      ]
+    }
+  ]
+}
