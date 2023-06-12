@@ -1,0 +1,22 @@
+{
+  "include": ["<iostream>"],
+  "namespace": "jduck::gen_trait::sample",
+  "trait": [
+    {
+      "name": "drawable",
+      "func": [
+        {
+          "name": "draw",
+          "ret": "void",
+          "args": [
+            {
+              "name": "os",
+              "type": "std::ostream",
+              "cvref": "&"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

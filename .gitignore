@@ -1,3 +1,4 @@
 .vscode
 .idea
-sample.out
+build
+cmake-build*

@@ -1,5 +1,5 @@
-#ifndef INCLUDE_86202b7f6a6e5ea954d7737d2591512681926a87
-#define INCLUDE_86202b7f6a6e5ea954d7737d2591512681926a87
+#ifndef INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
+#define INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
 
 #include <memory>
 
@@ -12,7 +12,8 @@ template <typename R, typename... Args> struct callable_base {
   };
   template <typename Impl> struct vtable_impl {
     static R invoke(void *impl, Args... args) {
-      return static_cast<Impl *>(impl)->operator()(std::forward<Args>(args)...);
+      return static_cast<Impl *>(impl)->operator()(
+          static_cast<Args &&>(args)...);
     }
     static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
   };
@@ -43,10 +44,10 @@ public:
   explicit callable_ref(Impl *impl) noexcept
       : callable_ref(impl, &base::template vtable_for<Impl>) {}
   template <typename Impl>
-  explicit callable_ref(std::unique_ptr<Impl> impl) noexcept
+  explicit callable_ref(std::unique_ptr<Impl> const &impl) noexcept
       : callable_ref(impl.get(), &base::template vtable_for<Impl>) {}
   template <typename Impl>
-  explicit callable_ref(std::shared_ptr<Impl> impl) noexcept
+  explicit callable_ref(std::shared_ptr<Impl> const &impl) noexcept
       : callable_ref(impl.get(), &base::template vtable_for<Impl>) {}
   template <typename Impl,
             typename = std::enable_if_t<base::template not_relative<Impl>>>
@@ -64,10 +65,9 @@ public:
                          callable_ref const &rhs) noexcept {
     return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
   }
-  explicit operator bool() const noexcept { return impl != nullptr; }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl, std::forward<Args>(args)...);
+    return vtbl->invoke(impl, static_cast<Args &&>(args)...);
   }
 };
 template <typename R, typename... Args>
@@ -97,7 +97,7 @@ public:
   template <typename Impl,
             typename = std::enable_if_t<base::template not_relative<Impl>>>
   callable(Impl &&impl)
-      : impl(new Impl(std::forward<Impl>(impl))),
+      : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
         vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~callable() {
     vtbl->destroy(impl);
@@ -114,7 +114,7 @@ public:
   }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl, std::forward<Args>(args)...);
+    return vtbl->invoke(impl, static_cast<Args &&>(args)...);
   }
 };
 template <typename R, typename... Args>
@@ -128,6 +128,9 @@ public:
   template <typename Impl>
   explicit callable_shared(Impl *impl)
       : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
+  template <typename Impl>
+  explicit callable_shared(std::unique_ptr<Impl> impl) noexcept
+      : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {}
   template <typename Impl>
   explicit callable_shared(std::shared_ptr<Impl> impl) noexcept
       : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
@@ -151,7 +154,7 @@ public:
   }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl.get(), std::forward<Args>(args)...);
+    return vtbl->invoke(impl.get(), static_cast<Args &&>(args)...);
   }
 };
 } // namespace jduck::gen_trait::sample
@@ -179,4 +182,4 @@ struct hash<jduck::gen_trait::sample::callable_shared<R, Args...>> {
   }
 };
 } // namespace std
-#endif // INCLUDE_86202b7f6a6e5ea954d7737d2591512681926a87
+#endif // INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
