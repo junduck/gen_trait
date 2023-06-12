@@ -55,7 +55,6 @@ std::swap(vtbl, other.vtbl);
 }}
 friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
 friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl; }}
-explicit operator bool() const noexcept {{ return impl != nullptr; }}
 
 {api_list}
 }};"""
