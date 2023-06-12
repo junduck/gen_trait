@@ -104,6 +104,9 @@ public:
 template <typename Impl>
 explicit {name}(Impl *impl) : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
 template <typename Impl>
+explicit {name}(std::unique_ptr<Impl> impl) noexcept
+: impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {{}}
+template <typename Impl>
 explicit {name}(std::shared_ptr<Impl> impl) noexcept : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
 template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
 {name}(Impl &&impl) :
