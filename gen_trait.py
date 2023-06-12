@@ -238,7 +238,7 @@ class IdentGenerator:
         for arg in args:
             if "warp" not in arg and self.is_tmpl_t(arg):
                 # we don't need to forward const& but whatever, no harm
-                arg['wrap'] = "std::forward<{type}>".format(type=arg['type'])
+                arg['wrap'] = "static_cast<{type}&&>".format(type=arg['type'])
         return ", ".join([self.trans_fcall(arg) for arg in args])
 
     @staticmethod
