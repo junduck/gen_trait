@@ -23,7 +23,7 @@ Here is a brief description of the input format:
 
 - pragma: optional, array of strings to provide pragma directives for the generated header file.
 
-- trait: required, describes the traits to be generated.
+- trait: required, array of objects to describe the traits to be generated.
 
   - name: required, string, the name of the trait.
 
@@ -52,6 +52,7 @@ Here is a brief description of the input format:
 
       - cvref: optional, string, add cv ref qualifiers.
 
+    - cvref: optional, string, add cv ref qualifiers to the FUNCTION itself.
 
 ## Implementation details
 
@@ -67,5 +68,4 @@ Specializations of ```std::hash``` are also provided for all three classes.
 
 Regarding to overhead, each trait function call is exactly two indirection, one for virtual table lookup and another one for the function call itself. Virtual table is generated statically for each erased type and is shared by all instances of the same type, thus not allocated on heap.
 
-As for space, both trait and trait ref are 2 pointers and trait shared is 1 pointer and 1 shared_ptr. It is possible to implement the shared trait with intrusive ref counting to object creation and deletion maybe a little bit faster. It is up to further investigation.
-
+As for space, both trait and trait ref are 2 pointers and trait shared is 1 pointer and 1 shared_ptr.
