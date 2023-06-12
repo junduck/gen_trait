@@ -44,9 +44,9 @@ public:
 template <typename Impl>
 explicit {name}(Impl *impl) noexcept : {name}(impl, &base::template vtable_for<Impl>) {{}}
 template <typename Impl>
-explicit {name}(std::unique_ptr<Impl> impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
+explicit {name}(std::unique_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
 template <typename Impl>
-explicit {name}(std::shared_ptr<Impl> impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
+explicit {name}(std::shared_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
 template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
 {name}(Impl const &impl) noexcept : {name}(std::addressof(const_cast<Impl&>(impl)), &base::template vtable_for<Impl>) {{}}
 void swap({name} &other) noexcept {{
@@ -80,7 +80,8 @@ explicit {name}(Impl *impl) noexcept : impl(impl), vtbl(&base::template vtable_f
 template <typename Impl>
 explicit {name}(std::unique_ptr<Impl> impl) noexcept : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {{}}
 template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
-{name}(Impl &&impl) : impl(new Impl(std::forward<Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
+{name}(Impl &&impl) : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
+vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
 ~{name}() {{ vtbl->destroy(impl); impl = nullptr; }}
 operator {trait_ref}() const {{ return {{impl, vtbl}}; }}
 void swap({name} &other) noexcept {{
