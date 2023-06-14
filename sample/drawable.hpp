@@ -1,5 +1,5 @@
-#ifndef INCLUDE_9950c210c74a4a2397377ce73994b5d9ea782fd6
-#define INCLUDE_9950c210c74a4a2397377ce73994b5d9ea782fd6
+#ifndef INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788
+#define INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788
 
 #include <iostream>
 #include <memory>
@@ -9,22 +9,35 @@ namespace detail {
 struct drawable_base {
   struct vtable {
     void (*draw)(void *, std::ostream &);
+    void (*draw_cap)(void *, std::ostream &);
     void (*destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
     static void draw(void *impl, std::ostream &os) {
       return static_cast<Impl *>(impl)->draw(os);
     }
+    static void draw_cap(void *impl, std::ostream &os) {
+      return static_cast<Impl *>(impl)->draw_cap(os);
+    }
     static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
   };
   template <typename Impl>
   constexpr static vtable vtable_for{
       vtable_impl<Impl>::draw,
+      vtable_impl<Impl>::draw_cap,
       vtable_impl<Impl>::destroy,
   };
   template <typename Impl>
   constexpr static bool not_relative =
       !std::is_base_of_v<drawable_base, std::decay_t<Impl>>;
+  template <typename T, template <typename...> typename TA>
+  struct is_specialization_of : std::false_type {};
+  template <template <typename...> typename T, typename... TA>
+  struct is_specialization_of<T<TA...>, T> : std::true_type {};
+  template <typename T>
+  constexpr static bool not_smartptr =
+      !(is_specialization_of<T, std::shared_ptr>::value ||
+        is_specialization_of<T, std::unique_ptr>::value);
 };
 } // namespace detail
 class drawable_ref : detail::drawable_base {
@@ -49,10 +62,10 @@ public:
   explicit drawable_ref(std::shared_ptr<Impl> const &impl) noexcept
       : drawable_ref(impl.get(), &base::template vtable_for<Impl>) {}
   template <typename Impl,
-            typename = std::enable_if_t<base::template not_relative<Impl>>>
-  drawable_ref(Impl const &impl) noexcept
-      : drawable_ref(std::addressof(const_cast<Impl &>(impl)),
-                     &base::template vtable_for<Impl>) {}
+            typename = std::enable_if_t<base::template not_relative<Impl> &&
+                                        base::template not_smartptr<Impl>>>
+  drawable_ref(Impl &impl) noexcept
+      : drawable_ref(std::addressof(impl), &base::template vtable_for<Impl>) {}
   void swap(drawable_ref &other) noexcept {
     std::swap(impl, other.impl);
     std::swap(vtbl, other.vtbl);
@@ -66,6 +79,7 @@ public:
   }
 
   void draw(std::ostream &os) { return vtbl->draw(impl, os); }
+  void draw_cap(std::ostream &os) const { return vtbl->draw_cap(impl, os); }
 };
 class drawable : detail::drawable_base {
   using base = detail::drawable_base;
@@ -110,6 +124,7 @@ public:
   }
 
   void draw(std::ostream &os) { return vtbl->draw(impl, os); }
+  void draw_cap(std::ostream &os) const { return vtbl->draw_cap(impl, os); }
 };
 class drawable_shared : detail::drawable_base {
   using base = detail::drawable_base;
@@ -147,6 +162,9 @@ public:
   }
 
   void draw(std::ostream &os) { return vtbl->draw(impl.get(), os); }
+  void draw_cap(std::ostream &os) const {
+    return vtbl->draw_cap(impl.get(), os);
+  }
 };
 } // namespace jduck::gen_trait::sample
 
@@ -170,4 +188,4 @@ template <> struct hash<jduck::gen_trait::sample::drawable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_9950c210c74a4a2397377ce73994b5d9ea782fd6
+#endif // INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788

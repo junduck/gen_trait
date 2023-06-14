@@ -15,6 +15,18 @@
               "cvref": "&"
             }
           ]
+        },
+        {
+          "name": "draw_cap",
+          "ret": "void",
+          "args": [
+            {
+              "name": "os",
+              "type": "std::ostream",
+              "cvref": "&"
+            }
+          ],
+          "cvref": "const"
         }
       ]
     }
