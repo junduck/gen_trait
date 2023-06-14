@@ -27,6 +27,14 @@ vtable_impl<Impl>::destroy,
 }};
 template <typename Impl>
 constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
+template <typename T, template <typename...> typename TA>
+struct is_specialization_of : std::false_type {{}};
+template <template <typename...> typename T, typename... TA>
+struct is_specialization_of<T<TA...>, T> : std::true_type {{}};
+template <typename T>
+constexpr static bool not_smartptr =
+!(is_specialization_of<T, std::shared_ptr>::value ||
+is_specialization_of<T, std::unique_ptr>::value);
 }};"""
 
     trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
@@ -47,8 +55,10 @@ template <typename Impl>
 explicit {name}(std::unique_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
 template <typename Impl>
 explicit {name}(std::shared_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
-template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
-{name}(Impl const &impl) noexcept : {name}(std::addressof(const_cast<Impl&>(impl)), &base::template vtable_for<Impl>) {{}}
+template <typename Impl,
+typename = std::enable_if_t<base::template not_relative<Impl> &&
+base::template not_smartptr<Impl>>>
+{name}(Impl &impl) noexcept : {name}(std::addressof(impl), &base::template vtable_for<Impl>) {{}}
 void swap({name} &other) noexcept {{
 std::swap(impl, other.impl);
 std::swap(vtbl, other.vtbl);

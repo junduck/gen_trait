@@ -1,5 +1,5 @@
-#ifndef INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
-#define INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
+#ifndef INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40
+#define INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40
 
 #include <memory>
 
@@ -25,6 +25,14 @@ template <typename R, typename... Args> struct callable_base {
   template <typename Impl>
   constexpr static bool not_relative =
       !std::is_base_of_v<callable_base, std::decay_t<Impl>>;
+  template <typename T, template <typename...> typename TA>
+  struct is_specialization_of : std::false_type {};
+  template <template <typename...> typename T, typename... TA>
+  struct is_specialization_of<T<TA...>, T> : std::true_type {};
+  template <typename T>
+  constexpr static bool not_smartptr =
+      !(is_specialization_of<T, std::shared_ptr>::value ||
+        is_specialization_of<T, std::unique_ptr>::value);
 };
 } // namespace detail
 template <typename R, typename... Args>
@@ -50,10 +58,10 @@ public:
   explicit callable_ref(std::shared_ptr<Impl> const &impl) noexcept
       : callable_ref(impl.get(), &base::template vtable_for<Impl>) {}
   template <typename Impl,
-            typename = std::enable_if_t<base::template not_relative<Impl>>>
-  callable_ref(Impl const &impl) noexcept
-      : callable_ref(std::addressof(const_cast<Impl &>(impl)),
-                     &base::template vtable_for<Impl>) {}
+            typename = std::enable_if_t<base::template not_relative<Impl> &&
+                                        base::template not_smartptr<Impl>>>
+  callable_ref(Impl &impl) noexcept
+      : callable_ref(std::addressof(impl), &base::template vtable_for<Impl>) {}
   void swap(callable_ref &other) noexcept {
     std::swap(impl, other.impl);
     std::swap(vtbl, other.vtbl);
@@ -182,4 +190,4 @@ struct hash<jduck::gen_trait::sample::callable_shared<R, Args...>> {
   }
 };
 } // namespace std
-#endif // INCLUDE_44d51b6175721692e0ccdda571033d44812dc13c
+#endif // INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40

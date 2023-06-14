@@ -59,6 +59,8 @@ TEST(callable, basic) {
   callable_ref<int, int> cr2(sp.get());
   // can construct from unique_ptr, noted ctor from ptr is explicit
   callable_ref<int, int> cr3(sp); // same for std::shared_ptr, not tested here
+  // do not construct from rvalue
+  // callable_ref<int, int> cr4(stateful_callable2{});
   // ref to same obj
   EXPECT_EQ(cr2(1), 1);
   EXPECT_EQ(cr3(2), 3);
