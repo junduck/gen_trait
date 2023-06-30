@@ -4,7 +4,8 @@ import sys
 
 
 class CppTmpl:
-    vtable = """{ret} (*{iname})({plist}){noexcept};"""
+    vtable = """using {iname}_t = {ret} (*)({plist}){noexcept};
+{iname}_t {iname};"""
 
     vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
 
@@ -39,14 +40,16 @@ is_specialization_of<T, std::unique_ptr>::value);
 
     trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
 
+    trait_api_inplace = """{ret} {name}({plist}){cvref}{{ return vtbl({clist}); }}"""
+
     trait_ref = """{decl} : {base} {{
 using base = {base};
 {friend_decl_unique};
 {friend_decl_shared};
 friend struct std::hash<{name}>;
 void *impl;
-typename base::vtable const *vtbl;
-{name}(void *impl, typename base::vtable const *vtbl) noexcept : impl(impl), vtbl(vtbl) {{}}
+typename base::vtable{ref_vtbl} vtbl;
+{name}(void *impl, typename base::vtable const *vtbl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
 public:
 {name}() noexcept = default;
 template <typename Impl>
@@ -396,8 +399,16 @@ class Trait:
         cvref = f.get('cvref', "")
         return CppTmpl.trait_api.format(ret=f['ret'], name=f['name'], iname=self.iname_for(f), plist=plist, clist=clist, cvref=cvref)
 
+    def trait_api_inplace(self, f: dict):
+        """Generates a trait api call from in-place vtbl"""
+        plist = self.id.fparam_list_named(f['args'])
+        clist = self.id.fcall_list(self.add_impl_ptr(f['args'], False))
+        cvref = f.get('cvref', "")
+        return CppTmpl.trait_api_inplace.format(ret=f['ret'], name=f['name'], plist=plist, clist=clist, cvref=cvref)
+
     def trait_ref(self):
         """Generates a trait ref definition"""
+        indirect = len(self.func) > 1
         name = self.name + "_ref"
         decl = self.id.declare(name, "class")
         base_name = self.name + "_base"
@@ -405,12 +416,19 @@ class Trait:
         friend_decl_unique = self.id.declare(self.name, "class", True)
         shared_name = self.name + "_shared"
         friend_decl_shared = self.id.declare(shared_name, "class", True)
-        api_list = "\n".join([self.trait_api(f, False) for f in self.func])
+        ref_vtbl = " const *" if indirect else "::{iname}_t ".format(iname=self.iname_for(self.func[0]))
+        ref_vtbl_init = "vtbl" if indirect else "vtbl->{iname}".format(iname=self.iname_for(self.func[0]))
+        if indirect:
+            api_list = "\n".join([self.trait_api(f, False) for f in self.func])
+        else:
+            api_list = self.trait_api_inplace(self.func[0])
         return CppTmpl.trait_ref.format(name=name,
                                         decl=decl,
                                         base=base,
                                         friend_decl_unique=friend_decl_unique,
                                         friend_decl_shared=friend_decl_shared,
+                                        ref_vtbl=ref_vtbl,
+                                        ref_vtbl_init=ref_vtbl_init,
                                         api_list=api_list)
 
     def trait_unique(self):

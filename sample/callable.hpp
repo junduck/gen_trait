@@ -1,5 +1,5 @@
-#ifndef INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40
-#define INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40
+#ifndef INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051
+#define INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051
 
 #include <memory>
 
@@ -7,7 +7,8 @@ namespace jduck::gen_trait::sample {
 namespace detail {
 template <typename R, typename... Args> struct callable_base {
   struct vtable {
-    R (*invoke)(void *, Args...);
+    using invoke_t = R (*)(void *, Args...);
+    invoke_t invoke;
     void (*destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
@@ -42,9 +43,9 @@ class callable_ref : detail::callable_base<R, Args...> {
   template <typename, typename...> friend class callable_shared;
   friend struct std::hash<callable_ref>;
   void *impl;
-  typename base::vtable const *vtbl;
+  typename base::vtable::invoke_t vtbl;
   callable_ref(void *impl, typename base::vtable const *vtbl) noexcept
-      : impl(impl), vtbl(vtbl) {}
+      : impl(impl), vtbl(vtbl->invoke) {}
 
 public:
   callable_ref() noexcept = default;
@@ -75,7 +76,7 @@ public:
   }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl, static_cast<Args &&>(args)...);
+    return vtbl(impl, static_cast<Args &&>(args)...);
   }
 };
 template <typename R, typename... Args>
@@ -190,4 +191,4 @@ struct hash<jduck::gen_trait::sample::callable_shared<R, Args...>> {
   }
 };
 } // namespace std
-#endif // INCLUDE_9a968a0ccc4e91d851f249d5da71a741b5ae9b40
+#endif // INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051

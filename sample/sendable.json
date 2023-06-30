@@ -1,0 +1,16 @@
+{
+  "include": ["<string>"],
+  "namespace": "jduck::gen_trait::sample",
+  "trait": [
+    {
+      "name": "sendable",
+      "func": [
+        {
+          "name": "send",
+          "ret": "bool",
+          "args": [{ "name": "msg", "type": "std::string", "cvref": "const &" }]
+        }
+      ]
+    }
+  ]
+}

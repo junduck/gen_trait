@@ -1,5 +1,5 @@
-#ifndef INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788
-#define INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788
+#ifndef INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
+#define INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
 
 #include <iostream>
 #include <memory>
@@ -8,8 +8,10 @@ namespace jduck::gen_trait::sample {
 namespace detail {
 struct drawable_base {
   struct vtable {
-    void (*draw)(void *, std::ostream &);
-    void (*draw_cap)(void *, std::ostream &);
+    using draw_t = void (*)(void *, std::ostream &);
+    draw_t draw;
+    using draw_cap_t = void (*)(void *, std::ostream &);
+    draw_cap_t draw_cap;
     void (*destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
@@ -188,4 +190,4 @@ template <> struct hash<jduck::gen_trait::sample::drawable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_291f7ca08b2a4859d2818ff842e46eede48f4788
+#endif // INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
