@@ -14,17 +14,17 @@ class CppTmpl:
     trait_base = """{decl} {{
 struct vtable {{
 {vtable_list}
-void (*destroy)(void *);
+void (*_gen_trait_destroy)(void *);
 }};
 template <typename Impl>
 struct vtable_impl {{
 {vtable_impl_list}
-static void destroy(void *impl) {{ delete static_cast<Impl *>(impl); }}
+static void _gen_trait_destroy(void *impl) {{ delete static_cast<Impl *>(impl); }}
 }};
 template <typename Impl>
 constexpr static vtable vtable_for{{
 {vtable_for_list}
-vtable_impl<Impl>::destroy,
+vtable_impl<Impl>::_gen_trait_destroy,
 }};
 template <typename Impl>
 constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
@@ -94,7 +94,7 @@ explicit {name}(std::unique_ptr<Impl> impl) noexcept : impl(impl.release()), vtb
 template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
 {name}(Impl &&impl) : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
 vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
-~{name}() {{ vtbl->destroy(impl); impl = nullptr; }}
+~{name}() {{ vtbl->_gen_trait_destroy(impl); impl = nullptr; }}
 operator {trait_ref}() const {{ return {{impl, vtbl}}; }}
 void swap({name} &other) noexcept {{
 std::swap(impl, other.impl);
@@ -359,7 +359,7 @@ class Trait:
 
     @staticmethod
     def iname_for(f: dict) -> str:
-        return f['name'] if f['name'] != "operator()" else "invoke"
+        return f['name'] if f['name'] != "operator()" else "_gen_trait_invoke"
 
     def vtable(self, f: dict) -> str:
         """Generates a vtable entry"""

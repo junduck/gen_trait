@@ -1,5 +1,5 @@
-#ifndef INCLUDE_83b9158cc6884fd848655920829eaedc22d3bd1a
-#define INCLUDE_83b9158cc6884fd848655920829eaedc22d3bd1a
+#ifndef INCLUDE_d39e1723a1a81dc416317f337b3fa33dfda1a8ce
+#define INCLUDE_d39e1723a1a81dc416317f337b3fa33dfda1a8ce
 
 #include <memory>
 #include <string>
@@ -10,18 +10,20 @@ struct sendable_base {
   struct vtable {
     using send_t = bool (*)(void *, std::string const &);
     send_t send;
-    void (*destroy)(void *);
+    void (*_gen_trait_destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
     static bool send(void *impl, std::string const &msg) {
       return static_cast<Impl *>(impl)->send(msg);
     }
-    static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
+    static void _gen_trait_destroy(void *impl) {
+      delete static_cast<Impl *>(impl);
+    }
   };
   template <typename Impl>
   constexpr static vtable vtable_for{
       vtable_impl<Impl>::send,
-      vtable_impl<Impl>::destroy,
+      vtable_impl<Impl>::_gen_trait_destroy,
   };
   template <typename Impl>
   constexpr static bool not_relative =
@@ -105,7 +107,7 @@ public:
       : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
         vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~sendable() {
-    vtbl->destroy(impl);
+    vtbl->_gen_trait_destroy(impl);
     impl = nullptr;
   }
   operator sendable_ref() const { return {impl, vtbl}; }
@@ -179,4 +181,4 @@ template <> struct hash<jduck::gen_trait::sample::sendable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_83b9158cc6884fd848655920829eaedc22d3bd1a
+#endif // INCLUDE_d39e1723a1a81dc416317f337b3fa33dfda1a8ce

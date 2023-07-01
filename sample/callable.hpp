@@ -1,5 +1,5 @@
-#ifndef INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051
-#define INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051
+#ifndef INCLUDE_5804a24e49ae3956f606296a9b22bb09fcb8d49d
+#define INCLUDE_5804a24e49ae3956f606296a9b22bb09fcb8d49d
 
 #include <memory>
 
@@ -7,21 +7,23 @@ namespace jduck::gen_trait::sample {
 namespace detail {
 template <typename R, typename... Args> struct callable_base {
   struct vtable {
-    using invoke_t = R (*)(void *, Args...);
-    invoke_t invoke;
-    void (*destroy)(void *);
+    using _gen_trait_invoke_t = R (*)(void *, Args...);
+    _gen_trait_invoke_t _gen_trait_invoke;
+    void (*_gen_trait_destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
-    static R invoke(void *impl, Args... args) {
+    static R _gen_trait_invoke(void *impl, Args... args) {
       return static_cast<Impl *>(impl)->operator()(
           static_cast<Args &&>(args)...);
     }
-    static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
+    static void _gen_trait_destroy(void *impl) {
+      delete static_cast<Impl *>(impl);
+    }
   };
   template <typename Impl>
   constexpr static vtable vtable_for{
-      vtable_impl<Impl>::invoke,
-      vtable_impl<Impl>::destroy,
+      vtable_impl<Impl>::_gen_trait_invoke,
+      vtable_impl<Impl>::_gen_trait_destroy,
   };
   template <typename Impl>
   constexpr static bool not_relative =
@@ -43,9 +45,9 @@ class callable_ref : detail::callable_base<R, Args...> {
   template <typename, typename...> friend class callable_shared;
   friend struct std::hash<callable_ref>;
   void *impl;
-  typename base::vtable::invoke_t vtbl;
+  typename base::vtable::_gen_trait_invoke_t vtbl;
   callable_ref(void *impl, typename base::vtable const *vtbl) noexcept
-      : impl(impl), vtbl(vtbl->invoke) {}
+      : impl(impl), vtbl(vtbl->_gen_trait_invoke) {}
 
 public:
   callable_ref() noexcept = default;
@@ -109,7 +111,7 @@ public:
       : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
         vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~callable() {
-    vtbl->destroy(impl);
+    vtbl->_gen_trait_destroy(impl);
     impl = nullptr;
   }
   operator callable_ref<R, Args...>() const { return {impl, vtbl}; }
@@ -123,7 +125,7 @@ public:
   }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl, static_cast<Args &&>(args)...);
+    return vtbl->_gen_trait_invoke(impl, static_cast<Args &&>(args)...);
   }
 };
 template <typename R, typename... Args>
@@ -163,7 +165,7 @@ public:
   }
 
   R operator()(Args... args) const {
-    return vtbl->invoke(impl.get(), static_cast<Args &&>(args)...);
+    return vtbl->_gen_trait_invoke(impl.get(), static_cast<Args &&>(args)...);
   }
 };
 } // namespace jduck::gen_trait::sample
@@ -191,4 +193,4 @@ struct hash<jduck::gen_trait::sample::callable_shared<R, Args...>> {
   }
 };
 } // namespace std
-#endif // INCLUDE_ee38b9e9b823fab6fd28013aa63d40aaf378a051
+#endif // INCLUDE_5804a24e49ae3956f606296a9b22bb09fcb8d49d

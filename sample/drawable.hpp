@@ -1,5 +1,5 @@
-#ifndef INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
-#define INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
+#ifndef INCLUDE_d028f079250f5a43d7a9616de1bf4581703f8013
+#define INCLUDE_d028f079250f5a43d7a9616de1bf4581703f8013
 
 #include <iostream>
 #include <memory>
@@ -12,7 +12,7 @@ struct drawable_base {
     draw_t draw;
     using draw_cap_t = void (*)(void *, std::ostream &);
     draw_cap_t draw_cap;
-    void (*destroy)(void *);
+    void (*_gen_trait_destroy)(void *);
   };
   template <typename Impl> struct vtable_impl {
     static void draw(void *impl, std::ostream &os) {
@@ -21,13 +21,15 @@ struct drawable_base {
     static void draw_cap(void *impl, std::ostream &os) {
       return static_cast<Impl *>(impl)->draw_cap(os);
     }
-    static void destroy(void *impl) { delete static_cast<Impl *>(impl); }
+    static void _gen_trait_destroy(void *impl) {
+      delete static_cast<Impl *>(impl);
+    }
   };
   template <typename Impl>
   constexpr static vtable vtable_for{
       vtable_impl<Impl>::draw,
       vtable_impl<Impl>::draw_cap,
-      vtable_impl<Impl>::destroy,
+      vtable_impl<Impl>::_gen_trait_destroy,
   };
   template <typename Impl>
   constexpr static bool not_relative =
@@ -112,7 +114,7 @@ public:
       : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
         vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
   ~drawable() {
-    vtbl->destroy(impl);
+    vtbl->_gen_trait_destroy(impl);
     impl = nullptr;
   }
   operator drawable_ref() const { return {impl, vtbl}; }
@@ -190,4 +192,4 @@ template <> struct hash<jduck::gen_trait::sample::drawable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_835619b225657fce4efd9da7bd51fc6ae197e3fc
+#endif // INCLUDE_d028f079250f5a43d7a9616de1bf4581703f8013
