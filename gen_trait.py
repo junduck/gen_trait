@@ -346,10 +346,19 @@ class Include:
 class Trait:
     """Generates your traits"""
 
-    def __init__(self, name: str, template_list: list[dict], function_list: list[dict], ns: str):
+    def __init__(self, name: str, template_list: list[dict], function_list: list[dict], gen_list: list[str], ns: str):
         self.name = name
         self.id = IdentGenerator(template_list)
         self.func = function_list
+        self.gen = []
+        for g in gen_list:
+            if len(g) == 0:
+                continue
+            gg = g[0].lower()
+            if gg == "u" or gg == "s" or gg == "r":
+                self.gen.append(gg)
+        if len(self.gen) == 0:
+            self.gen = ["u", "s", "r"]
         self.ns = ns
 
     @staticmethod
@@ -408,6 +417,8 @@ class Trait:
 
     def trait_ref(self):
         """Generates a trait ref definition"""
+        if "r" not in self.gen:
+            return ""
         indirect = len(self.func) > 1
         name = self.name + "_ref"
         decl = self.id.declare(name, "class")
@@ -433,6 +444,8 @@ class Trait:
 
     def trait_unique(self):
         """Generates unique ownership trait definition"""
+        if "u" not in self.gen:
+            return ""
         name = self.name
         decl = self.id.declare(name, "class")
         base_name = self.name + "_base"
@@ -448,6 +461,8 @@ class Trait:
 
     def trait_shared(self):
         """Generates shared ownership trait definition"""
+        if "s" not in self.gen:
+            return ""
         name = self.name + "_shared"
         decl = self.id.declare(name, "class")
         base_name = self.name + "_base"
@@ -463,6 +478,8 @@ class Trait:
 
     def hash_ref(self):
         """Generates std::hash specialization for trait ref"""
+        if "r" not in self.gen:
+            return ""
         name = self.name + "_ref"
         tlist = self.id.tparam_list_named()
         spec = self.id.specialize(name, self.ns)
@@ -470,6 +487,8 @@ class Trait:
 
     def hash_unique(self):
         """Generates std::hash specialization for unique trait"""
+        if "u" not in self.gen:
+            return ""
         name = self.name
         tlist = self.id.tparam_list_named()
         spec = self.id.specialize(name, self.ns)
@@ -477,6 +496,8 @@ class Trait:
 
     def hash_shared(self):
         """Generates std::hash specialization for shared trait"""
+        if "s" not in self.gen:
+            return ""
         name = self.name + "_shared"
         tlist = self.id.tparam_list_named()
         spec = self.id.specialize(name, self.ns)
@@ -499,7 +520,7 @@ class GenTrait:
             self.ns = ""
             self.ns_begin = ""
             self.ns_end = ""
-        self.trait = [Trait(t['name'], t.get('template', []), t['func'], self.ns) for t in trait]
+        self.trait = [Trait(t['name'], t.get('template', []), t['func'], t.get('gen', ["u", "s", "r"]), self.ns) for t in trait]
 
     def __str__(self):
         trait_base_list = "\n".join([t.trait_base() for t in self.trait])

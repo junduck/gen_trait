@@ -10,7 +10,8 @@
           "ret": "bool",
           "args": [{ "name": "msg", "type": "std::string", "cvref": "const &" }]
         }
-      ]
+      ],
+      "gen": ["u", "Ref", "Only first letter u/s/r matters and invalid gens are ignored"]
     }
   ]
 }

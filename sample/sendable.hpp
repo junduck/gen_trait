@@ -122,43 +122,7 @@ public:
 
   bool send(std::string const &msg) { return vtbl->send(impl, msg); }
 };
-class sendable_shared : detail::sendable_base {
-  using base = detail::sendable_base;
-  friend struct std::hash<sendable_shared>;
-  std::shared_ptr<void> impl;
-  typename base::vtable const *vtbl;
 
-public:
-  template <typename Impl>
-  explicit sendable_shared(Impl *impl)
-      : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
-  template <typename Impl>
-  explicit sendable_shared(std::unique_ptr<Impl> impl) noexcept
-      : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {}
-  template <typename Impl>
-  explicit sendable_shared(std::shared_ptr<Impl> impl) noexcept
-      : impl(impl), vtbl(&base::template vtable_for<Impl>) {}
-  template <typename Impl,
-            typename = std::enable_if_t<base::template not_relative<Impl>>>
-  sendable_shared(Impl &&impl)
-      : impl(std::make_shared<std::remove_reference_t<Impl>>(
-            std::forward<Impl>(impl))),
-        vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {}
-  operator sendable_ref() const { return {impl.get(), vtbl}; }
-  void swap(sendable_shared &other) noexcept {
-    impl.swap(other.impl);
-    std::swap(vtbl, other.vtbl);
-  }
-  friend void swap(sendable_shared &lhs, sendable_shared &rhs) noexcept {
-    lhs.swap(rhs);
-  }
-  friend bool operator==(sendable_shared const &lhs,
-                         sendable_shared const &rhs) noexcept {
-    return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl;
-  }
-
-  bool send(std::string const &msg) { return vtbl->send(impl.get(), msg); }
-};
 } // namespace jduck::gen_trait::sample
 
 namespace std {
@@ -174,11 +138,6 @@ template <> struct hash<jduck::gen_trait::sample::sendable> {
     return std::hash<void *>()(v.impl);
   }
 };
-template <> struct hash<jduck::gen_trait::sample::sendable_shared> {
-  size_t operator()(
-      jduck::gen_trait::sample::sendable_shared const &v) const noexcept {
-    return std::hash<void *>()(v.impl.get());
-  }
-};
+
 } // namespace std
 #endif // INCLUDE_d39e1723a1a81dc416317f337b3fa33dfda1a8ce
