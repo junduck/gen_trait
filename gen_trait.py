@@ -9,6 +9,8 @@ class CppTmpl:
 
     vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
 
+    vtable_impl_any = """static {ret} {iname}({plist}){noexcept}{{ return {cast_ops}<{cast_type}>(impl){access_ops}{name}({clist}); }}"""
+
     vtable_for = """vtable_impl<Impl>::{iname},"""
 
     trait_base = """{decl} {{
@@ -41,6 +43,35 @@ is_specialization_of<T, std::unique_ptr>::value);
     trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
 
     trait_api_inplace = """{ret} {name}({plist}){cvref}{{ return vtbl({clist}); }}"""
+
+    trait_any = """{decl} {{
+struct vtable {{
+{vtable_list}
+}};
+template <typename Impl>
+struct vtable_impl {{
+{vtable_impl_list}
+}};
+template <typename Impl>
+constexpr static vtable vtable_for{{
+{vtable_for_list}
+}};
+template <typename Impl>
+constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
+// TODO: std::any is not hashable, and hashing can't work when erased right?
+mutable std::any impl;
+vtable{ref_vtbl} vtbl;
+public:
+template <typename Impl>
+{name}(Impl const &impl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
+void swap({name} &other) noexcept {{
+impl.swap(other.impl);
+std::swap(vtbl, other.vtbl);
+}}
+friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
+// TODO: operator== should be in vtable
+{api_list}
+}};"""
 
     trait_ref = """{decl} : {base} {{
 using base = {base};
@@ -364,6 +395,11 @@ class Trait:
     @staticmethod
     def add_impl_ptr(args: list, shared_ptr=False):
         prepend = {"name": "impl.get()" if shared_ptr else "impl", "type": "void *"}
+        return [prepend] + args
+
+    @staticmethod
+    def add_impl_any(args: list):
+        prepend = {"name": "impl", "type": "std::any &"}
         return [prepend] + args
 
     @staticmethod
