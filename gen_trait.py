@@ -4,8 +4,8 @@ import sys
 
 
 class CppTmpl:
-    vtable = """using {iname}_t = {ret} (*)({plist}){noexcept};
-{iname}_t {iname};"""
+    vtable = """using _gen_trait_{iname}_vtbl_t = {ret} (*)({plist}){noexcept};
+_gen_trait_{iname}_vtbl_t {iname};"""
 
     vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
 
@@ -465,7 +465,7 @@ class Trait:
         friend_decl_unique = self.id.declare(self.name, "class", True)
         shared_name = self.name + "_shared"
         friend_decl_shared = self.id.declare(shared_name, "class", True)
-        ref_vtbl = " const *" if indirect else "::{iname}_t ".format(iname=self.iname_for(self.func[0]))
+        ref_vtbl = " const *" if indirect else "::_gen_trait_{iname}_vtbl_t ".format(iname=self.iname_for(self.func[0]))
         ref_vtbl_init = "vtbl" if indirect else "vtbl->{iname}".format(iname=self.iname_for(self.func[0]))
         if indirect:
             api_list = "\n".join([self.trait_api(f, False) for f in self.func])
