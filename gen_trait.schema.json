@@ -91,6 +91,12 @@
                 "args"
               ]
             }
+          },
+          "gen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
