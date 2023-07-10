@@ -1,6 +1,7 @@
 #ifndef INCLUDE_d028f079250f5a43d7a9616de1bf4581703f8013
 #define INCLUDE_d028f079250f5a43d7a9616de1bf4581703f8013
 
+#include <functional>
 #include <iostream>
 #include <memory>
 

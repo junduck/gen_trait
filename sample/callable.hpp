@@ -1,6 +1,7 @@
 #ifndef INCLUDE_5804a24e49ae3956f606296a9b22bb09fcb8d49d
 #define INCLUDE_5804a24e49ae3956f606296a9b22bb09fcb8d49d
 
+#include <functional>
 #include <memory>
 
 namespace jduck::gen_trait::sample {

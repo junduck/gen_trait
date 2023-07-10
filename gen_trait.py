@@ -362,12 +362,14 @@ class Pragma:
 
 
 class Include:
-    """Generates #include list, adds <memory> if not present"""
+    """Generates #include list, adds <memory> and <functional> if not present"""
 
     def __init__(self, include_list: list[str]):
         self.include_list = [f"\"{i}\"" if not i.startswith("<") else i for i in include_list]
         if "<memory>" not in self.include_list:
             self.include_list.append("<memory>")
+        if "<functional>" not in self.include_list:
+            self.include_list.append("<functional>")
 
     def __str__(self):
         tmpl = "#include {include}"
