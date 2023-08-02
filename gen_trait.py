@@ -7,9 +7,9 @@ class CppTmpl:
     vtable = """using _gen_trait_{iname}_vtbl_t = {ret} (*)({plist}){noexcept};
 _gen_trait_{iname}_vtbl_t {iname};"""
 
-    vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<_GEN_TRAIT_TMPL_Impl *>(impl)->{name}({clist}); }}"""
+    vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<_GEN_TRAIT_TMPL_Impl *>(_gen_trait_impl)->{name}({clist}); }}"""
 
-    vtable_impl_any = """static {ret} {iname}({plist}){noexcept}{{ return {cast_ops}<{cast_type}>(impl){access_ops}{name}({clist}); }}"""
+    vtable_impl_any = """static {ret} {iname}({plist}){noexcept}{{ return {cast_ops}<{cast_type}>(_gen_trait_impl){access_ops}{name}({clist}); }}"""
 
     vtable_for = """vtable_impl<_GEN_TRAIT_TMPL_Impl>::{iname},"""
 
@@ -21,7 +21,7 @@ void (*_gen_trait_destroy)(void *);
 template <typename _GEN_TRAIT_TMPL_Impl>
 struct vtable_impl {{
 {vtable_impl_list}
-static void _gen_trait_destroy(void *impl) {{ delete static_cast<_GEN_TRAIT_TMPL_Impl *>(impl); }}
+static void _gen_trait_destroy(void *_gen_trait_impl) {{ delete static_cast<_GEN_TRAIT_TMPL_Impl *>(_gen_trait_impl); }}
 }};
 template <typename _GEN_TRAIT_TMPL_Impl>
 constexpr static vtable vtable_for{{
@@ -40,9 +40,9 @@ constexpr static bool not_smartptr =
 is_specialization_of<_GEN_TRAIT_TMPL_T, std::unique_ptr>::value);
 }};"""
 
-    trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
+    trait_api = """{ret} {name}({plist}){cvref}{{ return _gen_trait_vtbl->{iname}({clist}); }}"""
 
-    trait_api_inplace = """{ret} {name}({plist}){cvref}{{ return vtbl({clist}); }}"""
+    trait_api_inplace = """{ret} {name}({plist}){cvref}{{ return _gen_trait_vtbl({clist}); }}"""
 
     trait_any = """{decl} {{
 struct vtable {{
@@ -59,14 +59,14 @@ constexpr static vtable vtable_for{{
 template <typename _GEN_TRAIT_TMPL_Impl>
 constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<_GEN_TRAIT_TMPL_Impl>>;
 // TODO: std::any is not hashable, and hashing can't work when erased right?
-mutable std::any impl;
-vtable{ref_vtbl} vtbl;
+mutable std::any _gen_trait_impl;
+vtable{ref_vtbl} _gen_trait_vtbl;
 public:
 template <typename _GEN_TRAIT_TMPL_Impl>
-{name}(_GEN_TRAIT_TMPL_Impl const &impl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
+{name}(_GEN_TRAIT_TMPL_Impl const &_gen_trait_impl) noexcept : _gen_trait_impl(_gen_trait_impl), _gen_trait_vtbl({ref_vtbl_init}) {{}}
 void swap({name} &other) noexcept {{
-impl.swap(other.impl);
-std::swap(vtbl, other.vtbl);
+_gen_trait_impl.swap(other._gen_trait_impl);
+std::swap(_gen_trait_vtbl, other._gen_trait_vtbl);
 }}
 friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
 // TODO: operator== should be in vtable
@@ -78,9 +78,9 @@ using base = {base};
 {friend_decl_unique};
 {friend_decl_shared};
 friend struct std::hash<{name}>;
-void *impl;
-typename base::vtable{ref_vtbl} vtbl;
-{name}(void *impl, typename base::vtable const *vtbl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
+void *_gen_trait_impl;
+typename base::vtable{ref_vtbl} _gen_trait_vtbl;
+{name}(void *impl, typename base::vtable const *vtbl) noexcept : _gen_trait_impl(impl), _gen_trait_vtbl({ref_vtbl_init}) {{}}
 public:
 {name}() noexcept = default;
 template <typename _GEN_TRAIT_TMPL_Impl>
@@ -94,11 +94,11 @@ typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl> &&
 base::template not_smartptr<_GEN_TRAIT_TMPL_Impl>>>
 {name}(_GEN_TRAIT_TMPL_Impl &impl) noexcept : {name}(std::addressof(impl), &base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 void swap({name} &other) noexcept {{
-std::swap(impl, other.impl);
-std::swap(vtbl, other.vtbl);
+std::swap(_gen_trait_impl, other._gen_trait_impl);
+std::swap(_gen_trait_vtbl, other._gen_trait_vtbl);
 }}
 friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
-friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl; }}
+friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs._gen_trait_vtbl == rhs._gen_trait_vtbl && lhs._gen_trait_impl == rhs._gen_trait_impl; }}
 
 {api_list}
 }};"""
@@ -106,33 +106,33 @@ friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return 
     trait_unique = """{decl} : {base} {{
 using base = {base};
 friend struct std::hash<{name}>;
-void *impl;
-typename base::vtable const *vtbl;
+void *_gen_trait_impl;
+typename base::vtable const *_gen_trait_vtbl;
 
 public:
 {name}({name} const &) = delete;
 {name} &operator=({name} const &) = delete;
-{name}({name} &&other) noexcept : impl(other.impl), vtbl(other.vtbl) {{ other.impl = nullptr; }}
+{name}({name} &&other) noexcept : _gen_trait_impl(other._gen_trait_impl), _gen_trait_vtbl(other._gen_trait_vtbl) {{ other._gen_trait_impl = nullptr; }}
 {name} &operator=({name} &&other) noexcept {{
 auto tmp(std::move(other));
 tmp.swap(*this);
 return *this;
 }}
 template <typename _GEN_TRAIT_TMPL_Impl>
-explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) noexcept : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) noexcept : _gen_trait_impl(impl), _gen_trait_vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 template <typename _GEN_TRAIT_TMPL_Impl>
-explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : impl(impl.release()), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : _gen_trait_impl(impl.release()), _gen_trait_vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 template <typename _GEN_TRAIT_TMPL_Impl, typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl>>>
-{name}(_GEN_TRAIT_TMPL_Impl &&impl) : impl(new std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))),
-vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
-~{name}() {{ vtbl->_gen_trait_destroy(impl); impl = nullptr; }}
-operator {trait_ref}() const {{ return {{impl, vtbl}}; }}
+{name}(_GEN_TRAIT_TMPL_Impl &&impl) : _gen_trait_impl(new std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))),
+_gen_trait_vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
+~{name}() {{ _gen_trait_vtbl->_gen_trait_destroy(_gen_trait_impl); _gen_trait_impl = nullptr; }}
+operator {trait_ref}() const {{ return {{_gen_trait_impl, _gen_trait_vtbl}}; }}
 void swap({name} &other) noexcept {{
-std::swap(impl, other.impl);
-std::swap(vtbl, other.vtbl);
+std::swap(_gen_trait_impl, other._gen_trait_impl);
+std::swap(_gen_trait_vtbl, other._gen_trait_vtbl);
 }}
 friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
-friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl; }}
+friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs._gen_trait_vtbl == rhs._gen_trait_vtbl && lhs._gen_trait_impl == rhs._gen_trait_impl; }}
 
 {api_list}
 }};"""
@@ -140,40 +140,40 @@ friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return 
     trait_shared = """{decl} : {base} {{
 using base = {base};
 friend struct std::hash<{name}>;
-std::shared_ptr<void> impl;
-typename base::vtable const *vtbl;
+std::shared_ptr<void> _gen_trait_impl;
+typename base::vtable const *_gen_trait_vtbl;
 
 public:
 template <typename _GEN_TRAIT_TMPL_Impl>
-explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) : _gen_trait_impl(impl), _gen_trait_vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 template <typename _GEN_TRAIT_TMPL_Impl>
 explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept
-: impl(impl.release()), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+: _gen_trait_impl(impl.release()), _gen_trait_vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 template <typename _GEN_TRAIT_TMPL_Impl>
-explicit {name}(std::shared_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+explicit {name}(std::shared_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : _gen_trait_impl(impl), _gen_trait_vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 template <typename _GEN_TRAIT_TMPL_Impl, typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl>>>
 {name}(_GEN_TRAIT_TMPL_Impl &&impl) :
-impl(std::make_shared<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
-operator {trait_ref}() const {{ return {{impl.get(), vtbl}}; }}
+_gen_trait_impl(std::make_shared<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))), _gen_trait_vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
+operator {trait_ref}() const {{ return {{_gen_trait_impl.get(), _gen_trait_vtbl}}; }}
 void swap({name} &other) noexcept {{
-impl.swap(other.impl);
-std::swap(vtbl, other.vtbl);
+_gen_trait_impl.swap(other._gen_trait_impl);
+std::swap(_gen_trait_vtbl, other._gen_trait_vtbl);
 }}
 friend void swap({name} &lhs, {name} &rhs) noexcept {{ lhs.swap(rhs); }}
-friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs.vtbl == rhs.vtbl && lhs.impl == rhs.impl; }}
+friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return lhs._gen_trait_vtbl == rhs._gen_trait_vtbl && lhs._gen_trait_impl == rhs._gen_trait_impl; }}
 
 {api_list}
 }};"""
 
     hash = """template <{tlist}> struct hash<{spec}>{{
 size_t operator()({spec} const &v) const noexcept {{
-return std::hash<void *>()(v.impl);
+return std::hash<void *>()(v._gen_trait_impl);
 }}
 }};"""
 
     hash_shared = """template <{tlist}> struct hash<{spec}>{{
 size_t operator()({spec} const &v) const noexcept {{
-return std::hash<void *>()(v.impl.get());
+return std::hash<void *>()(v._gen_trait_impl.get());
 }}
 }};"""
 
@@ -396,12 +396,12 @@ class Trait:
 
     @staticmethod
     def add_impl_ptr(args: list, shared_ptr=False):
-        prepend = {"name": "impl.get()" if shared_ptr else "impl", "type": "void *"}
+        prepend = {"name": "_gen_trait_impl.get()" if shared_ptr else "_gen_trait_impl", "type": "void *"}
         return [prepend] + args
 
     @staticmethod
     def add_impl_any(args: list):
-        prepend = {"name": "impl", "type": "std::any &"}
+        prepend = {"name": "_gen_trait_impl", "type": "std::any &"}
         return [prepend] + args
 
     @staticmethod
