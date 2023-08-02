@@ -283,7 +283,7 @@ class IdentGenerator:
             return ""
         # NOTE: we should always forward template args unless user wraps explicitly
         for arg in args:
-            if "warp" not in arg and self.is_tmpl_t(arg):
+            if "wrap" not in arg and self.is_tmpl_t(arg):
                 # we don't need to forward const& but whatever, no harm
                 arg['wrap'] = "static_cast<{type}&&>".format(type=arg['type'])
         return ", ".join([self.trans_fcall(arg) for arg in args])
