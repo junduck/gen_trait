@@ -7,37 +7,37 @@ class CppTmpl:
     vtable = """using _gen_trait_{iname}_vtbl_t = {ret} (*)({plist}){noexcept};
 _gen_trait_{iname}_vtbl_t {iname};"""
 
-    vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<Impl *>(impl)->{name}({clist}); }}"""
+    vtable_impl = """static {ret} {iname}({plist}){noexcept}{{ return static_cast<_GEN_TRAIT_TMPL_Impl *>(impl)->{name}({clist}); }}"""
 
     vtable_impl_any = """static {ret} {iname}({plist}){noexcept}{{ return {cast_ops}<{cast_type}>(impl){access_ops}{name}({clist}); }}"""
 
-    vtable_for = """vtable_impl<Impl>::{iname},"""
+    vtable_for = """vtable_impl<_GEN_TRAIT_TMPL_Impl>::{iname},"""
 
     trait_base = """{decl} {{
 struct vtable {{
 {vtable_list}
 void (*_gen_trait_destroy)(void *);
 }};
-template <typename Impl>
+template <typename _GEN_TRAIT_TMPL_Impl>
 struct vtable_impl {{
 {vtable_impl_list}
-static void _gen_trait_destroy(void *impl) {{ delete static_cast<Impl *>(impl); }}
+static void _gen_trait_destroy(void *impl) {{ delete static_cast<_GEN_TRAIT_TMPL_Impl *>(impl); }}
 }};
-template <typename Impl>
+template <typename _GEN_TRAIT_TMPL_Impl>
 constexpr static vtable vtable_for{{
 {vtable_for_list}
-vtable_impl<Impl>::_gen_trait_destroy,
+vtable_impl<_GEN_TRAIT_TMPL_Impl>::_gen_trait_destroy,
 }};
-template <typename Impl>
-constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
-template <typename T, template <typename...> typename TA>
+template <typename _GEN_TRAIT_TMPL_Impl>
+constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<_GEN_TRAIT_TMPL_Impl>>;
+template <typename _GEN_TRAIT_TMPL_T, template <typename...> typename _GEN_TRAIT_TMPL_TA>
 struct is_specialization_of : std::false_type {{}};
-template <template <typename...> typename T, typename... TA>
-struct is_specialization_of<T<TA...>, T> : std::true_type {{}};
-template <typename T>
+template <template <typename...> typename _GEN_TRAIT_TMPL_T, typename... _GEN_TRAIT_TMPL_TA>
+struct is_specialization_of<_GEN_TRAIT_TMPL_T<_GEN_TRAIT_TMPL_TA...>, _GEN_TRAIT_TMPL_T> : std::true_type {{}};
+template <typename _GEN_TRAIT_TMPL_T>
 constexpr static bool not_smartptr =
-!(is_specialization_of<T, std::shared_ptr>::value ||
-is_specialization_of<T, std::unique_ptr>::value);
+!(is_specialization_of<_GEN_TRAIT_TMPL_T, std::shared_ptr>::value ||
+is_specialization_of<_GEN_TRAIT_TMPL_T, std::unique_ptr>::value);
 }};"""
 
     trait_api = """{ret} {name}({plist}){cvref}{{ return vtbl->{iname}({clist}); }}"""
@@ -48,22 +48,22 @@ is_specialization_of<T, std::unique_ptr>::value);
 struct vtable {{
 {vtable_list}
 }};
-template <typename Impl>
+template <typename _GEN_TRAIT_TMPL_Impl>
 struct vtable_impl {{
 {vtable_impl_list}
 }};
-template <typename Impl>
+template <typename _GEN_TRAIT_TMPL_Impl>
 constexpr static vtable vtable_for{{
 {vtable_for_list}
 }};
-template <typename Impl>
-constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<Impl>>;
+template <typename _GEN_TRAIT_TMPL_Impl>
+constexpr static bool not_relative = !std::is_base_of_v<{name}, std::decay_t<_GEN_TRAIT_TMPL_Impl>>;
 // TODO: std::any is not hashable, and hashing can't work when erased right?
 mutable std::any impl;
 vtable{ref_vtbl} vtbl;
 public:
-template <typename Impl>
-{name}(Impl const &impl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+{name}(_GEN_TRAIT_TMPL_Impl const &impl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
 void swap({name} &other) noexcept {{
 impl.swap(other.impl);
 std::swap(vtbl, other.vtbl);
@@ -83,16 +83,16 @@ typename base::vtable{ref_vtbl} vtbl;
 {name}(void *impl, typename base::vtable const *vtbl) noexcept : impl(impl), vtbl({ref_vtbl_init}) {{}}
 public:
 {name}() noexcept = default;
-template <typename Impl>
-explicit {name}(Impl *impl) noexcept : {name}(impl, &base::template vtable_for<Impl>) {{}}
-template <typename Impl>
-explicit {name}(std::unique_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
-template <typename Impl>
-explicit {name}(std::shared_ptr<Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<Impl>) {{}}
-template <typename Impl,
-typename = std::enable_if_t<base::template not_relative<Impl> &&
-base::template not_smartptr<Impl>>>
-{name}(Impl &impl) noexcept : {name}(std::addressof(impl), &base::template vtable_for<Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) noexcept : {name}(impl, &base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(std::shared_ptr<_GEN_TRAIT_TMPL_Impl> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl,
+typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl> &&
+base::template not_smartptr<_GEN_TRAIT_TMPL_Impl>>>
+{name}(_GEN_TRAIT_TMPL_Impl &impl) noexcept : {name}(std::addressof(impl), &base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
 void swap({name} &other) noexcept {{
 std::swap(impl, other.impl);
 std::swap(vtbl, other.vtbl);
@@ -118,13 +118,13 @@ auto tmp(std::move(other));
 tmp.swap(*this);
 return *this;
 }}
-template <typename Impl>
-explicit {name}(Impl *impl) noexcept : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
-template <typename Impl>
-explicit {name}(std::unique_ptr<Impl> impl) noexcept : impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {{}}
-template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
-{name}(Impl &&impl) : impl(new std::remove_reference_t<Impl>(std::forward<Impl>(impl))),
-vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) noexcept : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : impl(impl.release()), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl, typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl>>>
+{name}(_GEN_TRAIT_TMPL_Impl &&impl) : impl(new std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))),
+vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
 ~{name}() {{ vtbl->_gen_trait_destroy(impl); impl = nullptr; }}
 operator {trait_ref}() const {{ return {{impl, vtbl}}; }}
 void swap({name} &other) noexcept {{
@@ -144,16 +144,16 @@ std::shared_ptr<void> impl;
 typename base::vtable const *vtbl;
 
 public:
-template <typename Impl>
-explicit {name}(Impl *impl) : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
-template <typename Impl>
-explicit {name}(std::unique_ptr<Impl> impl) noexcept
-: impl(impl.release()), vtbl(&base::template vtable_for<Impl>) {{}}
-template <typename Impl>
-explicit {name}(std::shared_ptr<Impl> impl) noexcept : impl(impl), vtbl(&base::template vtable_for<Impl>) {{}}
-template <typename Impl, typename = std::enable_if_t<base::template not_relative<Impl>>>
-{name}(Impl &&impl) :
-impl(std::make_shared<std::remove_reference_t<Impl>>(std::forward<Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<Impl>>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(_GEN_TRAIT_TMPL_Impl *impl) : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(std::unique_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept
+: impl(impl.release()), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl>
+explicit {name}(std::shared_ptr<_GEN_TRAIT_TMPL_Impl> impl) noexcept : impl(impl), vtbl(&base::template vtable_for<_GEN_TRAIT_TMPL_Impl>) {{}}
+template <typename _GEN_TRAIT_TMPL_Impl, typename = std::enable_if_t<base::template not_relative<_GEN_TRAIT_TMPL_Impl>>>
+{name}(_GEN_TRAIT_TMPL_Impl &&impl) :
+impl(std::make_shared<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>(std::forward<_GEN_TRAIT_TMPL_Impl>(impl))), vtbl(&base::template vtable_for<std::remove_reference_t<_GEN_TRAIT_TMPL_Impl>>) {{}}
 operator {trait_ref}() const {{ return {{impl.get(), vtbl}}; }}
 void swap({name} &other) noexcept {{
 impl.swap(other.impl);
@@ -423,7 +423,7 @@ class Trait:
 
     @staticmethod
     def vtable_for(f: dict) -> str:
-        """Generate a vtable_for<Impl> entry"""
+        """Generate a vtable_for<_GEN_TRAIT_TMPL_Impl> entry"""
         return CppTmpl.vtable_for.format(iname=Trait.iname_for(f))
 
     def trait_base(self):
