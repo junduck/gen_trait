@@ -11,7 +11,8 @@
           "args": [{ "name": "msg", "type": "std::string", "cvref": "const &" }]
         }
       ],
-      "gen": ["u", "Ref", "Only first letter u/s/r matters and invalid gens are ignored"]
+      "gen": ["u", "Ref", "Only first letter u/s/r matters and invalid gens are ignored"],
+      "inplace_ref": false
     }
   ]
 }

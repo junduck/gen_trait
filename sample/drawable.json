@@ -28,7 +28,8 @@
           ],
           "cvref": "const"
         }
-      ]
+      ],
+      "inplace_ref": true
     }
   ]
 }
