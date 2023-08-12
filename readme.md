@@ -21,8 +21,6 @@ Here is a brief description of the input format:
 
 - namespace: required, should be a string, the namespace of the generated traits enclosed in. If empty string, they are put in global namespace.
 
-- pragma: optional, array of strings to provide pragma directives for the generated header file.
-
 - trait: required, array of objects to describe the traits to be generated.
 
   - name: required, string, the name of the trait.
@@ -53,6 +51,12 @@ Here is a brief description of the input format:
       - cvref: optional, string, add cv ref qualifiers.
 
     - cvref: optional, string, add cv ref qualifiers to the FUNCTION itself.
+
+  - gen: optional, an array of "r" (for ref), "u" (for unique), "s" (for shared) to control which traits are generated. Defaults
+  to all traits generated.
+
+  - inplace_ref: optional, a boolean to force inplace vtable in trait reference. In some situations this can provide better
+  performance due to one less indirection. Default behaviour is true if the trait has only one member function otherwise false.
 
 ## Implementation details
 
