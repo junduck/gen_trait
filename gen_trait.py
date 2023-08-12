@@ -552,7 +552,7 @@ class TraitBuilder:
         for a, w in zip(f.args, f.args_wrap):
             if w:
                 args.append(CppVal(a.type, CppExprBuilder(a.name).called_by(w), a.cvref))
-            elif a.type in self._ttype:
+            elif a.type in self._ttype and not a.cvref:
                 # arg is a template type, we need to foward it
                 args.append(a.forward())
             else:
