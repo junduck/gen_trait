@@ -6,9 +6,9 @@ import sys
 class CppVal:
     # TODO: only basic support, no storage/linkage etc.
     def __init__(self, type: str, name: str, cvref: str = ""):
-        self._type = type
-        self._name = name
-        self._cvref = cvref
+        self._type = str(type)
+        self._name = str(name)
+        self._cvref = str(cvref)
 
     @staticmethod
     def load_from(a) -> "CppVal":
@@ -41,8 +41,8 @@ class CppVal:
 
 class CppTparam:
     def __init__(self, type: str, name: str, pack: bool = False):
-        self._type = type
-        self._name = name
+        self._type = str(type)
+        self._name = str(name)
         self._pack = pack
 
     @staticmethod
@@ -295,7 +295,8 @@ class CppArgBuilder:
 
 class TraitFunc:
     # NOTE: trait functions are not templated. All templates are class scoped.
-    def __init__(self, name: str, ret: str, args: list[CppVal], args_wrap: list[str] = None, cvref: str = ""):
+    def __init__(self, fid: int, name: str, ret: str, args: list[CppVal], args_wrap: list[str] = None, cvref: str = ""):
+        self._fid = fid
         self._name = name
         self._ret = ret
         self._args = args.copy() if args is not None else []
@@ -309,7 +310,15 @@ class TraitFunc:
         for a in f['args']:
             args.append(CppVal.load_from(a))
             args_wrap.append(a.get('wrap', ""))
-        return TraitFunc(f['name'], f['ret'], args, args_wrap, f.get('cvref', ""))
+        return TraitFunc(f.get('fid', 0), f['name'], f['ret'], args, args_wrap, f.get('cvref', ""))
+
+    @property
+    def fid(self) -> int:
+        return self._fid
+
+    @fid.setter
+    def fid(self, fid: int):
+        self._fid = fid
 
     @property
     def name(self) -> str:
@@ -317,13 +326,7 @@ class TraitFunc:
 
     @property
     def vname(self) -> str:
-        if not self.name.strip().startswith("operator"):
-            return self.name
-        if "()" in self.name:
-            return "_gentrait_invk"
-        if "[]" in self.name:
-            return "_gentrait_subs"
-        raise ValueError(f"Operator overloading not supported: {self.name}")
+        return f"_gentrait_fn{self.fid}"
 
     @property
     def ret(self) -> str:
@@ -541,6 +544,8 @@ class TraitBuilder:
         self._tmpl = template_list
         self._ttype = {t.name for t in template_list if t.type == "typename" or t.type == "class"}
         self._func = function_list
+        for i in range(len(self._func)):
+            self._func[i].fid = i
         self._ns = ns
         self._inplace_ref = inplace_ref
         self._gen = {g[0].lower() for g in gen if g}
