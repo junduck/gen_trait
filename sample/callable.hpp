@@ -1,5 +1,5 @@
-#ifndef INCLUDE_5b2080591d29f4e6f36b6e10c1e138cee6b575cf
-#define INCLUDE_5b2080591d29f4e6f36b6e10c1e138cee6b575cf
+#ifndef INCLUDE_3a7dc174b1bf179acd2e117ee9defa15465f498e
+#define INCLUDE_3a7dc174b1bf179acd2e117ee9defa15465f498e
 
 #include <functional>
 #include <memory>
@@ -9,8 +9,10 @@ namespace detail {
 template <typename R, typename... Args>
 struct callable_base {
   struct vtable_base {
-    using _gentrait_invk_t = R (*)(void *, Args...);
-    _gentrait_invk_t _gentrait_invk;
+    using _gentrait_fn0_t = R (*)(void *, Args...);
+    _gentrait_fn0_t _gentrait_fn0;
+    using _gentrait_fn1_t = R (*)(void *);
+    _gentrait_fn1_t _gentrait_fn1;
     bool operator==(vtable_base const &) const = default;
   };
   struct vtable : vtable_base {
@@ -18,12 +20,14 @@ struct callable_base {
   };
   template <typename _GENTRAIT_IMPL>
   struct vtable_impl {
-    static R _gentrait_invk(void *_gentrait_impl, Args... args) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->operator()(static_cast<Args &&>(args)...); }
+    static R _gentrait_fn0(void *_gentrait_impl, Args... args) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->operator()(static_cast<Args &&>(args)...); }
+    static R _gentrait_fn1(void *_gentrait_impl) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->operator()(); }
     static void _gentrait_destroy(void *impl) { delete static_cast<_GENTRAIT_IMPL *>(impl); }
   };
   template <typename _GENTRAIT_IMPL>
   constexpr static vtable vtable_for{
-      vtable_impl<_GENTRAIT_IMPL>::_gentrait_invk,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn0,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn1,
       vtable_impl<_GENTRAIT_IMPL>::_gentrait_destroy,
   };
   template <typename _GENTRAIT_IMPL>
@@ -47,8 +51,8 @@ class callable_ref : detail::callable_base<R, Args...> {
   friend class callable_shared;
   friend struct std::hash<callable_ref>;
   void *_gentrait_impl;
-  typename base::vtable_base _gentrait_vtbl;
-  callable_ref(void *impl, typename base::vtable const *vtbl) noexcept : _gentrait_impl(impl), _gentrait_vtbl(*vtbl) {}
+  typename base::vtable_base const *_gentrait_vtbl;
+  callable_ref(void *impl, typename base::vtable const *vtbl) noexcept : _gentrait_impl(impl), _gentrait_vtbl(vtbl) {}
 
 public:
   callable_ref() noexcept = default;
@@ -69,7 +73,8 @@ public:
   friend void swap(callable_ref &lhs, callable_ref &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(callable_ref const &lhs, callable_ref const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  R operator()(Args... args) const { return _gentrait_vtbl._gentrait_invk(_gentrait_impl, static_cast<Args &&>(args)...); }
+  R operator()(Args... args) const { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl, static_cast<Args &&>(args)...); }
+  R operator()() { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl); }
 };
 template <typename R, typename... Args>
 class callable : detail::callable_base<R, Args...> {
@@ -106,7 +111,8 @@ public:
   friend void swap(callable &lhs, callable &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(callable const &lhs, callable const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  R operator()(Args... args) const { return _gentrait_vtbl->_gentrait_invk(_gentrait_impl, static_cast<Args &&>(args)...); }
+  R operator()(Args... args) const { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl, static_cast<Args &&>(args)...); }
+  R operator()() { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl); }
 };
 template <typename R, typename... Args>
 class callable_shared : detail::callable_base<R, Args...> {
@@ -132,7 +138,8 @@ public:
   friend void swap(callable_shared &lhs, callable_shared &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(callable_shared const &lhs, callable_shared const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  R operator()(Args... args) const { return _gentrait_vtbl->_gentrait_invk(_gentrait_impl.get(), static_cast<Args &&>(args)...); }
+  R operator()(Args... args) const { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl.get(), static_cast<Args &&>(args)...); }
+  R operator()() { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl.get()); }
 };
 } // namespace jduck::gen_trait::sample
 
@@ -156,4 +163,4 @@ struct hash<jduck::gen_trait::sample::callable_shared<R, Args...>> {
   }
 };
 } // namespace std
-#endif // INCLUDE_5b2080591d29f4e6f36b6e10c1e138cee6b575cf
+#endif // INCLUDE_3a7dc174b1bf179acd2e117ee9defa15465f498e

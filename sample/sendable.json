@@ -1,5 +1,5 @@
 {
-  "include": ["<string>"],
+  "include": ["<string>", "<vector>"],
   "namespace": "jduck::gen_trait::sample",
   "trait": [
     {
@@ -9,6 +9,11 @@
           "name": "send",
           "ret": "bool",
           "args": [{ "name": "msg", "type": "std::string", "cvref": "const &" }]
+        },
+        {
+          "name": "send",
+          "ret": "bool",
+          "args": [{ "name": "msg", "type": "std::vector<char>", "wrap": "std::move" }]
         }
       ],
       "gen": ["u", "Ref", "Only first letter u/s/r matters and invalid gens are ignored"],

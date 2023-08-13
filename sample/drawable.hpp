@@ -1,5 +1,5 @@
-#ifndef INCLUDE_8e22e2dce3ae9da55985c127b7886d016805de81
-#define INCLUDE_8e22e2dce3ae9da55985c127b7886d016805de81
+#ifndef INCLUDE_27c2f40de5054500dc1990dcf7abb34563e74c43
+#define INCLUDE_27c2f40de5054500dc1990dcf7abb34563e74c43
 
 #include <functional>
 #include <iostream>
@@ -9,10 +9,10 @@ namespace jduck::gen_trait::sample {
 namespace detail {
 struct drawable_base {
   struct vtable_base {
-    using draw_t = void (*)(void *, std::ostream &);
-    draw_t draw;
-    using draw_cap_t = void (*)(void *, std::ostream &);
-    draw_cap_t draw_cap;
+    using _gentrait_fn0_t = void (*)(void *, std::ostream &);
+    _gentrait_fn0_t _gentrait_fn0;
+    using _gentrait_fn1_t = void (*)(void *, std::ostream &);
+    _gentrait_fn1_t _gentrait_fn1;
     bool operator==(vtable_base const &) const = default;
   };
   struct vtable : vtable_base {
@@ -20,14 +20,14 @@ struct drawable_base {
   };
   template <typename _GENTRAIT_IMPL>
   struct vtable_impl {
-    static void draw(void *_gentrait_impl, std::ostream &os) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->draw(os); }
-    static void draw_cap(void *_gentrait_impl, std::ostream &os) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->draw_cap(os); }
+    static void _gentrait_fn0(void *_gentrait_impl, std::ostream &os) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->draw(os); }
+    static void _gentrait_fn1(void *_gentrait_impl, std::ostream &os) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->draw_cap(os); }
     static void _gentrait_destroy(void *impl) { delete static_cast<_GENTRAIT_IMPL *>(impl); }
   };
   template <typename _GENTRAIT_IMPL>
   constexpr static vtable vtable_for{
-      vtable_impl<_GENTRAIT_IMPL>::draw,
-      vtable_impl<_GENTRAIT_IMPL>::draw_cap,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn0,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn1,
       vtable_impl<_GENTRAIT_IMPL>::_gentrait_destroy,
   };
   template <typename _GENTRAIT_IMPL>
@@ -70,8 +70,8 @@ public:
   friend void swap(drawable_ref &lhs, drawable_ref &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(drawable_ref const &lhs, drawable_ref const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  void draw(std::ostream &os) { return _gentrait_vtbl.draw(_gentrait_impl, os); }
-  void draw_cap(std::ostream &os) const { return _gentrait_vtbl.draw_cap(_gentrait_impl, os); }
+  void draw(std::ostream &os) { return _gentrait_vtbl._gentrait_fn0(_gentrait_impl, os); }
+  void draw_cap(std::ostream &os) const { return _gentrait_vtbl._gentrait_fn1(_gentrait_impl, os); }
 };
 class drawable : detail::drawable_base {
   using base = detail::drawable_base;
@@ -107,8 +107,8 @@ public:
   friend void swap(drawable &lhs, drawable &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(drawable const &lhs, drawable const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  void draw(std::ostream &os) { return _gentrait_vtbl->draw(_gentrait_impl, os); }
-  void draw_cap(std::ostream &os) const { return _gentrait_vtbl->draw_cap(_gentrait_impl, os); }
+  void draw(std::ostream &os) { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl, os); }
+  void draw_cap(std::ostream &os) const { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl, os); }
 };
 class drawable_shared : detail::drawable_base {
   using base = detail::drawable_base;
@@ -133,8 +133,8 @@ public:
   friend void swap(drawable_shared &lhs, drawable_shared &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(drawable_shared const &lhs, drawable_shared const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  void draw(std::ostream &os) { return _gentrait_vtbl->draw(_gentrait_impl.get(), os); }
-  void draw_cap(std::ostream &os) const { return _gentrait_vtbl->draw_cap(_gentrait_impl.get(), os); }
+  void draw(std::ostream &os) { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl.get(), os); }
+  void draw_cap(std::ostream &os) const { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl.get(), os); }
 };
 } // namespace jduck::gen_trait::sample
 
@@ -158,4 +158,4 @@ struct hash<jduck::gen_trait::sample::drawable_shared> {
   }
 };
 } // namespace std
-#endif // INCLUDE_8e22e2dce3ae9da55985c127b7886d016805de81
+#endif // INCLUDE_27c2f40de5054500dc1990dcf7abb34563e74c43

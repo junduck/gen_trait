@@ -1,16 +1,19 @@
-#ifndef INCLUDE_25c6693d95eaa237d351d09d9c8a3f6ae8b944f4
-#define INCLUDE_25c6693d95eaa237d351d09d9c8a3f6ae8b944f4
+#ifndef INCLUDE_e28c93d6762249772fbd9f67e47c9a533d7ba8fa
+#define INCLUDE_e28c93d6762249772fbd9f67e47c9a533d7ba8fa
 
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace jduck::gen_trait::sample {
 namespace detail {
 struct sendable_base {
   struct vtable_base {
-    using send_t = bool (*)(void *, std::string const &);
-    send_t send;
+    using _gentrait_fn0_t = bool (*)(void *, std::string const &);
+    _gentrait_fn0_t _gentrait_fn0;
+    using _gentrait_fn1_t = bool (*)(void *, std::vector<char>);
+    _gentrait_fn1_t _gentrait_fn1;
     bool operator==(vtable_base const &) const = default;
   };
   struct vtable : vtable_base {
@@ -18,12 +21,14 @@ struct sendable_base {
   };
   template <typename _GENTRAIT_IMPL>
   struct vtable_impl {
-    static bool send(void *_gentrait_impl, std::string const &msg) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->send(msg); }
+    static bool _gentrait_fn0(void *_gentrait_impl, std::string const &msg) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->send(msg); }
+    static bool _gentrait_fn1(void *_gentrait_impl, std::vector<char> msg) { return static_cast<_GENTRAIT_IMPL *>(_gentrait_impl)->send(std::move(msg)); }
     static void _gentrait_destroy(void *impl) { delete static_cast<_GENTRAIT_IMPL *>(impl); }
   };
   template <typename _GENTRAIT_IMPL>
   constexpr static vtable vtable_for{
-      vtable_impl<_GENTRAIT_IMPL>::send,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn0,
+      vtable_impl<_GENTRAIT_IMPL>::_gentrait_fn1,
       vtable_impl<_GENTRAIT_IMPL>::_gentrait_destroy,
   };
   template <typename _GENTRAIT_IMPL>
@@ -66,7 +71,8 @@ public:
   friend void swap(sendable_ref &lhs, sendable_ref &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(sendable_ref const &lhs, sendable_ref const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  bool send(std::string const &msg) { return _gentrait_vtbl->send(_gentrait_impl, msg); }
+  bool send(std::string const &msg) { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl, msg); }
+  bool send(std::vector<char> msg) { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl, std::move(msg)); }
 };
 class sendable : detail::sendable_base {
   using base = detail::sendable_base;
@@ -102,7 +108,8 @@ public:
   friend void swap(sendable &lhs, sendable &rhs) noexcept { lhs.swap(rhs); }
   friend bool operator==(sendable const &lhs, sendable const &rhs) noexcept { return lhs._gentrait_vtbl == rhs._gentrait_vtbl && lhs._gentrait_impl == rhs._gentrait_impl; }
 
-  bool send(std::string const &msg) { return _gentrait_vtbl->send(_gentrait_impl, msg); }
+  bool send(std::string const &msg) { return _gentrait_vtbl->_gentrait_fn0(_gentrait_impl, msg); }
+  bool send(std::vector<char> msg) { return _gentrait_vtbl->_gentrait_fn1(_gentrait_impl, std::move(msg)); }
 };
 
 } // namespace jduck::gen_trait::sample
@@ -122,4 +129,4 @@ struct hash<jduck::gen_trait::sample::sendable> {
 };
 
 } // namespace std
-#endif // INCLUDE_25c6693d95eaa237d351d09d9c8a3f6ae8b944f4
+#endif // INCLUDE_e28c93d6762249772fbd9f67e47c9a533d7ba8fa

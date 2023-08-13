@@ -15,7 +15,12 @@
           "ret": "R",
           "args": [{ "name": "args", "type": "Args"}],
           "cvref": "const"
-        }
+        },
+        {
+          "name": "operator()",
+          "ret": "R",
+          "args": []
+          }
       ]
     }
   ]

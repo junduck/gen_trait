@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "callable.hpp"
-
+#include "sendable.hpp"
 #include <unordered_set>
 
 struct stateful_callable {
@@ -10,6 +10,11 @@ struct stateful_callable {
     i += j;
     return i;
   }
+
+  int operator()() {
+    i = 0;
+    return i;
+  }
 };
 
 struct stateful_callable2 {
@@ -17,6 +22,11 @@ struct stateful_callable2 {
 
   int operator()(int j) {
     i += j * 2;
+    return i;
+  }
+
+  int operator()() {
+    i = 0;
     return i;
   }
 };
@@ -86,6 +96,9 @@ TEST(callable, basic) {
   // moved in
   EXPECT_EQ(c(1), 4);
   EXPECT_EQ(c(2), 6);
+
+  // overload
+  EXPECT_EQ(c(), 0);
 
   // other members are also trivial, not tested
 }
