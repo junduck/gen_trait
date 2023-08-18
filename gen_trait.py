@@ -474,7 +474,7 @@ template <typename _GENTRAIT_IMPL, typename = std::enable_if_t<base::template no
 {name}(_GENTRAIT_IMPL &&impl) : _gentrait_impl(new std::remove_reference_t<_GENTRAIT_IMPL>(std::forward<_GENTRAIT_IMPL>(impl))),
 _gentrait_vtbl(&base::template vtable_for<std::remove_reference_t<_GENTRAIT_IMPL>>) {{}}
 ~{name}() {{ _gentrait_vtbl->_gentrait_destroy(_gentrait_impl); _gentrait_impl = nullptr; }}
-operator {name_ref}() const {{ return {{_gentrait_impl, _gentrait_vtbl}}; }}
+{refconv}
 void swap({name} &other) noexcept {{
 std::swap(_gentrait_impl, other._gentrait_impl);
 std::swap(_gentrait_vtbl, other._gentrait_vtbl);
@@ -484,6 +484,8 @@ friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return 
 
 {trait_list}
 }};"""
+
+    trait_unique_op_refconv = "operator {name_ref}() const {{ return {{_gentrait_impl, _gentrait_vtbl}}; }}"
 
     trait_shared = """{decl} : {base} {{
 using base = {base};
@@ -500,7 +502,7 @@ template <typename _GENTRAIT_IMPL>
 explicit {name}(std::shared_ptr<_GENTRAIT_IMPL> impl) noexcept : _gentrait_impl(impl), _gentrait_vtbl(&base::template vtable_for<_GENTRAIT_IMPL>) {{}}
 template <typename _GENTRAIT_IMPL, typename = std::enable_if_t<base::template not_relative<_GENTRAIT_IMPL>>>
 {name}(_GENTRAIT_IMPL &&impl) : _gentrait_impl(std::make_shared<std::remove_reference_t<_GENTRAIT_IMPL>>(std::forward<_GENTRAIT_IMPL>(impl))), _gentrait_vtbl(&base::template vtable_for<std::remove_reference_t<_GENTRAIT_IMPL>>) {{}}
-operator {name_ref}() const {{ return {{_gentrait_impl.get(), _gentrait_vtbl}}; }}
+{refconv}
 void swap({name} &other) noexcept {{
 _gentrait_impl.swap(other._gentrait_impl);
 std::swap(_gentrait_vtbl, other._gentrait_vtbl);
@@ -510,6 +512,8 @@ friend bool operator==({name} const &lhs, {name} const &rhs) noexcept {{ return 
 
 {trait_list}
 }};"""
+
+    trait_shared_op_refconv = "operator {name_ref}() const {{ return {{_gentrait_impl.get(), _gentrait_vtbl}}; }}"
 
     trait_hash = """template <{tplist}> struct hash<{name}>{{
 size_t operator()({name} const &v) const noexcept {{
@@ -654,6 +658,10 @@ class TraitBuilder:
 
         name = self._name
         name_ref = self._specialise_trait(self._name + "_ref")
+        if "r" in self._gen:
+            refconv = TraitTmpl.trait_unique_op_refconv.format(name_ref=name_ref)
+        else:
+            refconv = ""
         decl = self._decl_trait(name)
         base = self._specialise_base()
 
@@ -666,7 +674,7 @@ class TraitBuilder:
         return TraitTmpl.trait_unique.format(decl=decl,
                                              base=base,
                                              name=name,
-                                             name_ref=name_ref,
+                                             refconv=refconv,
                                              trait_list="\n".join(trait_impl_list))
 
     def trait_shared(self) -> str:
@@ -675,6 +683,10 @@ class TraitBuilder:
 
         name = self._name + "_shared"
         name_ref = self._specialise_trait(self._name + "_ref")
+        if "r" in self._gen:
+            refconv = TraitTmpl.trait_shared_op_refconv.format(name_ref=name_ref)
+        else:
+            refconv = ""
         decl = self._decl_trait(name)
         base = self._specialise_base()
 
@@ -687,7 +699,7 @@ class TraitBuilder:
         return TraitTmpl.trait_shared.format(decl=decl,
                                              base=base,
                                              name=name,
-                                             name_ref=name_ref,
+                                             refconv=refconv,
                                              trait_list="\n".join(trait_impl_list))
 
     def hash_ref(self) -> str:
