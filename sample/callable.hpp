@@ -57,11 +57,11 @@ class callable_ref : detail::callable_base<R, Args...> {
 public:
   callable_ref() noexcept = default;
   template <typename _GENTRAIT_IMPL>
-  explicit callable_ref(_GENTRAIT_IMPL *impl) noexcept : callable_ref(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  callable_ref(_GENTRAIT_IMPL *impl) noexcept : callable_ref(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL>
-  explicit callable_ref(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : callable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  callable_ref(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : callable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL>
-  explicit callable_ref(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : callable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  callable_ref(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : callable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL,
             typename = std::enable_if_t<base::template not_relative<_GENTRAIT_IMPL> &&
                                         base::template not_smartptr<_GENTRAIT_IMPL>>>

@@ -433,11 +433,11 @@ void *_gentrait_impl;
 public:
 {name}() noexcept = default;
 template <typename _GENTRAIT_IMPL>
-explicit {name}(_GENTRAIT_IMPL *impl) noexcept : {name}(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
+{name}(_GENTRAIT_IMPL *impl) noexcept : {name}(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
 template <typename _GENTRAIT_IMPL>
-explicit {name}(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
+{name}(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
 template <typename _GENTRAIT_IMPL>
-explicit {name}(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
+{name}(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : {name}(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {{}}
 template <typename _GENTRAIT_IMPL,
 typename = std::enable_if_t<base::template not_relative<_GENTRAIT_IMPL> &&
 base::template not_smartptr<_GENTRAIT_IMPL>>>

@@ -55,11 +55,11 @@ class sendable_ref : detail::sendable_base {
 public:
   sendable_ref() noexcept = default;
   template <typename _GENTRAIT_IMPL>
-  explicit sendable_ref(_GENTRAIT_IMPL *impl) noexcept : sendable_ref(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  sendable_ref(_GENTRAIT_IMPL *impl) noexcept : sendable_ref(impl, &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL>
-  explicit sendable_ref(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : sendable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  sendable_ref(std::unique_ptr<_GENTRAIT_IMPL> const &impl) noexcept : sendable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL>
-  explicit sendable_ref(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : sendable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
+  sendable_ref(std::shared_ptr<_GENTRAIT_IMPL> const &impl) noexcept : sendable_ref(impl.get(), &base::template vtable_for<_GENTRAIT_IMPL>) {}
   template <typename _GENTRAIT_IMPL,
             typename = std::enable_if_t<base::template not_relative<_GENTRAIT_IMPL> &&
                                         base::template not_smartptr<_GENTRAIT_IMPL>>>
