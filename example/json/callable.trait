@@ -1,0 +1,9 @@
+// For demo purpose only, you should use std::function or equivalent because of SBO and other optimizations
+
+namespace jduck::gen_trait::sample;
+
+template<typename R, typename... Args>
+trait callable {
+    R operator()(Args... args) const;
+    R operator()();
+};

@@ -1,0 +1,8 @@
+#include <iostream>
+
+namespace jduck::gen_trait::sample;
+
+trait drawable [[inplace_ref]] {
+    void draw(std::ostream& os);
+    void draw_cap(std::ostream& os) const;
+};

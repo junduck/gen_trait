@@ -800,11 +800,30 @@ class GenTrait:
                                      guard_end=guard.end())
 
 
+def _is_json(filename: str) -> bool:
+    if filename.endswith('.json'):
+        return True
+    if filename.endswith('.trait'):
+        return False
+    with open(filename, "r") as f:
+        for line in f:
+            s = line.lstrip()
+            if not s or s.startswith('//'):
+                continue
+            return s.startswith('{')
+    return False
+
+
 def main(filename):
     """Called directly from console, prints generated traits"""
-    with open(filename, "r") as f:
-        j = json.load(f)
-    gen = GenTrait(j.get('include', []), j['namespace'], j['trait'])
+    if _is_json(filename):
+        with open(filename, "r") as f:
+            j = json.load(f)
+        gen = GenTrait(j.get('include', []), j['namespace'], j['trait'])
+    else:
+        from gen_trait.parser import parse_dsl
+        with open(filename, "r") as f:
+            gen = parse_dsl(f.read())
     print(gen)
 
 if __name__ == "__main__":

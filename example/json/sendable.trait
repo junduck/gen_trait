@@ -1,0 +1,9 @@
+#include <string>
+#include <vector>
+
+namespace jduck::gen_trait::sample;
+
+trait sendable [[gen(u), inplace_ref(false)]] {
+    bool send(std::string const& msg);
+    bool send(std::vector<char> msg [[wrap(std::move)]]);
+};

@@ -16,10 +16,12 @@ set "out_dir=%~dp0generated"
 
 if not exist "%out_dir%" mkdir "%out_dir%"
 
-for %%F in ("%wd%\*.json") do (
-  set "filename=%%~nxF"
-  if not "!filename!"=="gen_trait.schema.json" (
-    python -m gen_trait "%%~F" > "%out_dir%\!filename:.json=.hpp!"
+for %%E in (trait json) do (
+  for %%F in ("%wd%\*.%%E") do (
+    set "filename=%%~nxF"
+    if not "!filename!"=="gen_trait.schema.json" (
+      python -m gen_trait "%%~F" > "%out_dir%\%%~nF.hpp"
+    )
   )
 )
 

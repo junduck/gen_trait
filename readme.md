@@ -13,17 +13,19 @@ Unlike `std::function` or similar constructs, the generated traits support multi
 uv venv && uv pip install -e .
 ```
 
-### Generate traits from JSON
+### Generate traits
 
 ```bash
-python -m gen_trait <json_file>
+python -m gen_trait <file>
 ```
 
-Or use the shell script to batch-generate from a directory of JSON files:
+Accepts both `.trait` (C++-like DSL) and `.json` files. Format is auto-detected.
+
+Or use the shell script to batch-generate from a directory:
 
 ```bash
 cd example
-./gen_trait.sh [json_dir]
+./gen_trait.sh [dir]
 ```
 
 ### Build & run examples
@@ -42,7 +44,7 @@ gen_trait/
 │   └── GoogleBenchAndTest.cmake
 ├── example/                      # C++ example
 │   ├── CMakeLists.txt
-│   ├── json/                     # trait JSON configs
+│   ├── json/                     # trait definitions (.trait and .json)
 │   ├── generated/                # generated .hpp files
 │   ├── src/                      # C++ test/example source
 │   ├── gen_trait.sh
@@ -50,7 +52,9 @@ gen_trait/
 ├── src/gen_trait/                 # Python package
 │   ├── __init__.py
 │   ├── __main__.py
-│   └── gen_trait.py
+│   ├── gen_trait.py              # code generation backend
+│   ├── lexer.py                  # DSL tokenizer
+│   └── parser.py                 # DSL parser
 ├── pyproject.toml
 ├── gen_trait.schema.json
 └── readme.md
@@ -58,40 +62,59 @@ gen_trait/
 
 ## Input format
 
-gen_trait accepts a JSON file describing the traits to generate.
-A JSON schema is provided (`gen_trait.schema.json`) to describe the required data structure.
-You can also refer to the example inputs in `example/json/`.
+gen_trait supports two input formats: a C++-like DSL (recommended) and JSON (legacy).
 
-Here is a brief description of the input format:
+### DSL format (`.trait`)
 
-- **include**: optional, array of strings. `#include <memory>` is always added to the generated header.
+A natural C++-like syntax:
 
-- **namespace**: required, string. The namespace for the generated traits. Empty string = global namespace.
+```
+#include <iostream>
 
+namespace my::lib;
+
+trait drawable [[inplace_ref]] {
+    void draw(std::ostream& os);
+    void draw_cap(std::ostream& os) const;
+};
+
+template<typename R, typename... Args>
+trait callable {
+    R operator()(Args... args) const;
+    R operator()();
+};
+```
+
+#### DSL features
+
+- **`#include`** — standard include directives; `<memory>` and `<functional>` are always added.
+- **`namespace`** — qualified name with `;` terminator.
+- **`template<...>`** — standard C++ template parameter syntax, including `...` for parameter packs.
+- **`trait Name [[attrs]] { ... };`** — trait declaration with optional attributes.
+- **Function declarations** — standard C++ signature syntax.
+- **`[[attribute]]`** — C++11-style attributes for metadata.
+
+#### Attributes
+
+| Attribute | Applies to | Example | Meaning |
+|---|---|---|---|
+| `gen(modes)` | trait | `[[gen(u, s)]]` | Which variants to generate: `r`=ref, `u`=unique, `s`=shared. Default: all. |
+| `inplace_ref` | trait | `[[inplace_ref]]` or `[[inplace_ref(false)]]` | In-place vtable in ref for fewer indirections. Default: true if single function. |
+| `wrap(expr)` | parameter | `[[wrap(std::move)]]` | Wrap argument when forwarding to implementation. |
+
+### JSON format (`.json`)
+
+A JSON schema is provided (`gen_trait.schema.json`). Example inputs in `example/json/`.
+
+- **include**: optional, array of strings. `#include <memory>` is always added.
+- **namespace**: required, string. Empty string = global namespace.
 - **trait**: required, array of trait objects.
-
-  - **name**: required, string. Trait name.
-
-  - **template**: optional, array of template parameter objects.
-
-    - **name**: required, string. Template parameter name.
-    - **type**: required, string. Template parameter type.
-    - **pack**: optional, boolean. Whether this is a variadic template parameter.
-
-  - **func**: required, array of function objects.
-
-    - **name**: required, string. Function name.
-    - **ret**: required, string. Return type.
-    - **args**: required, array of argument objects.
-      - **name**: required, string. Argument name.
-      - **type**: required, string. Argument type.
-      - **wrap**: optional, string. Wrap the argument with this function call when passing to implementation. E.g. `std::move`.
-      - **cvref**: optional, string. CV/ref qualifiers for the argument.
-    - **cvref**: optional, string. CV/ref qualifiers for the function itself.
-
-  - **gen**: optional, array of `"r"` (ref), `"u"` (unique), `"s"` (shared) to control which traits are generated. Defaults to all.
-
-  - **inplace_ref**: optional, boolean. Force in-place vtable in trait reference for better performance (one less indirection). Default is `true` if the trait has only one member function, otherwise `false`.
+  - **name**: required, string.
+  - **template**: optional, array of `{type, name, pack?}` objects.
+  - **func**: required, array of `{name, ret, args[], cvref?}` objects.
+    - **args**: `{name, type, cvref?, wrap?}`.
+  - **gen**: optional, array of `"r"`, `"u"`, `"s"`. Defaults to all.
+  - **inplace_ref**: optional, boolean.
 
 ## Implementation details
 
