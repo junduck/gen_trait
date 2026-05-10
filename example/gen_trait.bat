@@ -8,22 +8,24 @@ set "folder=%~1"
 setlocal enabledelayedexpansion
 
 if "%folder%"=="" (
-  set "wd=%cd%"
+  set "wd=%cd%\json"
 ) else (
   set "wd=%folder%"
 )
-set "py=%~dp0gen_trait.py"
+set "out_dir=%~dp0generated"
+
+if not exist "%out_dir%" mkdir "%out_dir%"
 
 for %%F in ("%wd%\*.json") do (
   set "filename=%%~nxF"
   if not "!filename!"=="gen_trait.schema.json" (
-    python "%py%" "%%~F" > "%wd%\!filename:.json=.hpp!"
+    python -m gen_trait "%%~F" > "%out_dir%\!filename:.json=.hpp!"
   )
 )
 
 where clang-format >nul 2>&1
 if !errorlevel! equ 0 (
-  for %%F in ("%wd%\*.hpp") do (
+  for %%F in ("%out_dir%\*.hpp") do (
     clang-format -i "%%~F"
   )
 ) else (
@@ -31,4 +33,3 @@ if !errorlevel! equ 0 (
 )
 
 endlocal
-

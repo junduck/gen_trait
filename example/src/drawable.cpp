@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "drawable.hpp"
+#include "generated/drawable.hpp"
 #include <vector>
 
 struct square {

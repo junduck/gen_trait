@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
-#include "callable.hpp"
-#include "sendable.hpp"
+#include "generated/callable.hpp"
+#include "generated/sendable.hpp"
 #include <unordered_set>
 
 struct stateful_callable {

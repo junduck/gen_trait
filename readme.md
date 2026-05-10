@@ -2,74 +2,109 @@
 
 ## Introduction
 
-This little tool can be used to generate traits aka type erasures for C++.
-Unlike std::function or similar constructs, the generated traits support multiple apis, that is, more like a base class with virtual functions. Since type erased, client code does not need to inherit from common base class.
+This tool generates type-erased traits (a.k.a. type erasures) for C++.
+Unlike `std::function` or similar constructs, the generated traits support multiple APIs — more like a base class with virtual functions. Since the type is erased, client code does not need to inherit from a common base class.
 
 ## Usage
 
-The tool is a python script so you can just copy it to your project and use your automation tools or build system to invoke it.
-Provided is also a bash script that can be used to scan all json files in a directory and generate traits for them: ```./gen_trait.sh <directory>```
+### Install
+
+```bash
+uv venv && uv pip install -e .
+```
+
+### Generate traits from JSON
+
+```bash
+python -m gen_trait <json_file>
+```
+
+Or use the shell script to batch-generate from a directory of JSON files:
+
+```bash
+cd example
+./gen_trait.sh [json_dir]
+```
+
+### Build & run examples
+
+```bash
+cmake -B build example
+cmake --build build
+./build/gen_trait_example
+```
+
+## Project structure
+
+```
+gen_trait/
+├── cmake/                        # CMake modules
+│   └── GoogleBenchAndTest.cmake
+├── example/                      # C++ example
+│   ├── CMakeLists.txt
+│   ├── json/                     # trait JSON configs
+│   ├── generated/                # generated .hpp files
+│   ├── src/                      # C++ test/example source
+│   ├── gen_trait.sh
+│   └── gen_trait.bat
+├── src/gen_trait/                 # Python package
+│   ├── __init__.py
+│   ├── __main__.py
+│   └── gen_trait.py
+├── pyproject.toml
+├── gen_trait.schema.json
+└── readme.md
+```
 
 ## Input format
 
-gen_trait.py accept a json file as input which describe the traits to be generated.
-A json schema is provided to describe the required data structure.
-You can also refer to the example input in the example directory.
+gen_trait accepts a JSON file describing the traits to generate.
+A JSON schema is provided (`gen_trait.schema.json`) to describe the required data structure.
+You can also refer to the example inputs in `example/json/`.
+
 Here is a brief description of the input format:
 
-- include: optional, should be an array of strings, ```#include <memory>``` is always added to the generated header file.
+- **include**: optional, array of strings. `#include <memory>` is always added to the generated header.
 
-- namespace: required, should be a string, the namespace of the generated traits enclosed in. If empty string, they are put in global namespace.
+- **namespace**: required, string. The namespace for the generated traits. Empty string = global namespace.
 
-- trait: required, array of objects to describe the traits to be generated.
+- **trait**: required, array of trait objects.
 
-  - name: required, string, the name of the trait.
+  - **name**: required, string. Trait name.
 
-  - template: optional, array of objects to describe template parameters of the trait.
+  - **template**: optional, array of template parameter objects.
 
-    - name: required, string, template parameter name.
+    - **name**: required, string. Template parameter name.
+    - **type**: required, string. Template parameter type.
+    - **pack**: optional, boolean. Whether this is a variadic template parameter.
 
-    - type: required, string, template parameter type.
+  - **func**: required, array of function objects.
 
-    - pack: optional, boolean, whether the template parameter is a variadic template parameter.
+    - **name**: required, string. Function name.
+    - **ret**: required, string. Return type.
+    - **args**: required, array of argument objects.
+      - **name**: required, string. Argument name.
+      - **type**: required, string. Argument type.
+      - **wrap**: optional, string. Wrap the argument with this function call when passing to implementation. E.g. `std::move`.
+      - **cvref**: optional, string. CV/ref qualifiers for the argument.
+    - **cvref**: optional, string. CV/ref qualifiers for the function itself.
 
-  - func: required, array of objects to describe trait functions.
+  - **gen**: optional, array of `"r"` (ref), `"u"` (unique), `"s"` (shared) to control which traits are generated. Defaults to all.
 
-    - name: required, string, function name.
-
-    - ret: required, string, return type of the function.
-
-    - args: required, array of objects to describe function arguments.
-
-      - name: required, string, argument name.
-
-      - type: required, string, argument type.
-
-      - wrap: optional, string, when passed to actual implementation, wrap the argument with this function call.
-      For example, specify wrap as ```std::move``` to make ```x``` pass as ```std::move(x)```.
-
-      - cvref: optional, string, add cv ref qualifiers.
-
-    - cvref: optional, string, add cv ref qualifiers to the FUNCTION itself.
-
-  - gen: optional, an array of "r" (for ref), "u" (for unique), "s" (for shared) to control which traits are generated. Defaults
-  to all traits generated.
-
-  - inplace_ref: optional, a boolean to force inplace vtable in trait reference. In some situations this can provide better
-  performance due to one less indirection. Default behaviour is true if the trait has only one member function otherwise false.
+  - **inplace_ref**: optional, boolean. Force in-place vtable in trait reference for better performance (one less indirection). Default is `true` if the trait has only one member function, otherwise `false`.
 
 ## Implementation details
 
-For each trait named ```example```, three classes are generated:
+For each trait named `example`, three classes are generated:
 
-- ```example```: uniquely owned trait. It is move only and cannot be copied.
+- **`example`**: uniquely owned trait. Move-only, not copyable.
+- **`example_shared`**: shared trait. Copyable, reference-counted via `std::shared_ptr`.
+- **`example_ref`**: non-owning reference. Implicitly constructible from `example` and `example_shared`.
 
-- ```example_shared```: shared trait. It is copyable and is reference counted as underlying implemented by ```std::shared_ptr```.
+Specializations of `std::hash` are also provided for all three classes.
 
-- ```example_ref```: reference to trait. It does not hold ownership and can be implicitly converted by ```example``` and ```example_shared```.
+Each trait function call incurs exactly two indirections: one for virtual table lookup and one for the function call itself. The virtual table is generated statically for each erased type and shared by all instances of the same type (not heap-allocated).
 
-Specializations of ```std::hash``` are also provided for all three classes.
-
-Regarding to overhead, each trait function call is exactly two indirection, one for virtual table lookup and another one for the function call itself. Virtual table is generated statically for each erased type and is shared by all instances of the same type, thus not allocated on heap.
-
-As for space, both trait and trait ref are 2 pointers and trait shared is 1 pointer and 1 shared_ptr.
+Space overhead:
+- `trait` and `trait_ref`: 2 pointers
+- `trait_shared`: 1 pointer + 1 `shared_ptr`

@@ -1,0 +1,14 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gen_trait"
+version = "1.0.0"
+description = "C++ type-erased trait generator from JSON config"
+readme = "readme.md"
+license = "MIT"
+requires-python = ">=3.9"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gen_trait"]
